@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.3)
+cmake_minimum_required(VERSION 3.5)
 
 project(YourDSL)
 find_package(LLVM REQUIRED)
@@ -6,8 +6,8 @@ include(AddLLVM)
 
 add_llvm_executable(YourDSL
   main.cpp
-  jit.cpp
-  codegen.cpp
+  int_ops.cpp
+  float_ops.cpp
 )
 
 target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})

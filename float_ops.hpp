@@ -1,16 +1,24 @@
+#pragma once
 
 #include <cmath>
 #include <ostream>
 
 #include "bool_ops.hpp"
 
-#ifndef WITH_JIT
+#ifdef WITH_JIT
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Support/raw_ostream.h>
+#endif
+
 namespace MyDSL {
+class Integer;
+
+#ifndef WITH_JIT
 class Float {
   float value_;
 
 public:
-  Float(float value) : value_(value_) {}
+  Float(float value) : value_(value) {}
 
   Float operator+(const Float &other) const {
     return Float(value_ + other.value_);
@@ -85,10 +93,6 @@ public:
 };
 
 #else
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/Support/raw_ostream.h>
-
-namespace MyDSL {
 class Float {
   llvm::IRBuilder<> &builder_;
   llvm::Value *value_;
@@ -161,11 +165,10 @@ public:
     return *this;
   }
   Float operator^(const Float &other) const {
-    return {builder_.CreateCall(
-                llvm::Intrinsic::getDeclaration(
-                    builder_.GetInsertBlock()->getModule(), llvm::Intrinsic::pow,
-                    {value_->getType()}),
-                {value_, other.value_}),
+    return {builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+                                    builder_.GetInsertBlock()->getModule(),
+                                    llvm::Intrinsic::pow, {value_->getType()}),
+                                {value_, other.value_}),
             builder_};
   }
 
@@ -183,7 +186,9 @@ public:
 
   llvm::Value *getValue() const { return value_; }
 
-  operator llvm::Value* () const { return value_; }
+  operator llvm::Value *() const { return value_; }
+
+  explicit operator Integer() const;
 };
 #endif
 } // namespace MyDSL

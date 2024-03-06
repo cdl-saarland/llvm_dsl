@@ -1,17 +1,10 @@
-//===- KaleidoscopeJIT.h - A simple JIT for Kaleidoscope --------*- C++ -*-===//
+//===- jit.hpp --------*- C++ -*-===//
 //
-// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
-// See https://llvm.org/LICENSE.txt for license information.
-// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
-//
-//===----------------------------------------------------------------------===//
-//
-// Contains a simple JIT definition for use in the kaleidoscope tutorials.
+// Adapted from the Kaleidoscope JIT examples. (Apache-2.0 WITH LLVM-exception)
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
-#define LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+#pragma once
 
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ExecutionEngine/JITSymbol.h>
@@ -28,32 +21,33 @@
 
 #include <memory>
 
-namespace llvm {
-namespace orc {
+namespace MyDSL {
 
-class KaleidoscopeJIT {
+class Jit {
 private:
-  std::unique_ptr<ExecutionSession> ES;
+  std::unique_ptr<llvm::orc::ExecutionSession> ES;
 
-  DataLayout DL;
-  MangleAndInterner Mangle;
+  llvm::DataLayout DL;
+  llvm::orc::MangleAndInterner Mangle;
 
-  RTDyldObjectLinkingLayer ObjectLayer;
-  IRCompileLayer CompileLayer;
+  llvm::orc::RTDyldObjectLinkingLayer ObjectLayer;
+  llvm::orc::IRCompileLayer CompileLayer;
 
-  JITDylib &MainJD;
+  llvm::orc::JITDylib &MainJD;
 
 public:
-  KaleidoscopeJIT(std::unique_ptr<ExecutionSession> ES,
-                  JITTargetMachineBuilder JTMB, DataLayout DL)
+  Jit(std::unique_ptr<llvm::orc::ExecutionSession> ES,
+      llvm::orc::JITTargetMachineBuilder JTMB, llvm::DataLayout DL)
       : ES(std::move(ES)), DL(std::move(DL)), Mangle(*this->ES, this->DL),
-        ObjectLayer(*this->ES,
-                    []() { return std::make_unique<SectionMemoryManager>(); }),
-        CompileLayer(*this->ES, ObjectLayer,
-                     std::make_unique<ConcurrentIRCompiler>(std::move(JTMB))),
+        ObjectLayer(
+            *this->ES,
+            []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
+        CompileLayer(
+            *this->ES, ObjectLayer,
+            std::make_unique<llvm::orc::ConcurrentIRCompiler>(std::move(JTMB))),
         MainJD(this->ES->createBareJITDylib("<main>")) {
     MainJD.addGenerator(
-        cantFail(DynamicLibrarySearchGenerator::GetForCurrentProcess(
+        cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
             DL.getGlobalPrefix())));
     if (JTMB.getTargetTriple().isOSBinFormatCOFF()) {
       ObjectLayer.setOverrideObjectFlagsWithResponsibilityFlags(true);
@@ -61,45 +55,43 @@ public:
     }
   }
 
-  ~KaleidoscopeJIT() {
+  ~Jit() {
     if (auto Err = ES->endSession())
       ES->reportError(std::move(Err));
   }
 
-  static Expected<std::unique_ptr<KaleidoscopeJIT>> Create() {
-    auto EPC = SelfExecutorProcessControl::Create();
+  static llvm::Expected<std::unique_ptr<Jit>> Create() {
+    auto EPC = llvm::orc::SelfExecutorProcessControl::Create();
     if (!EPC)
       return EPC.takeError();
 
-    auto ES = std::make_unique<ExecutionSession>(std::move(*EPC));
+    auto ES = std::make_unique<llvm::orc::ExecutionSession>(std::move(*EPC));
 
-    JITTargetMachineBuilder JTMB(
+    llvm::orc::JITTargetMachineBuilder JTMB(
         ES->getExecutorProcessControl().getTargetTriple());
 
     auto DL = JTMB.getDefaultDataLayoutForTarget();
     if (!DL)
       return DL.takeError();
 
-    return std::make_unique<KaleidoscopeJIT>(std::move(ES), std::move(JTMB),
-                                             std::move(*DL));
+    return std::make_unique<Jit>(std::move(ES), std::move(JTMB),
+                                 std::move(*DL));
   }
 
-  const DataLayout &getDataLayout() const { return DL; }
+  const llvm::DataLayout &getDataLayout() const { return DL; }
 
-  JITDylib &getMainJITDylib() { return MainJD; }
+  llvm::orc::JITDylib &getMainJITDylib() { return MainJD; }
 
-  Error addModule(ThreadSafeModule TSM, ResourceTrackerSP RT = nullptr) {
+  llvm::Error addModule(llvm::orc::ThreadSafeModule TSM,
+                        llvm::orc::ResourceTrackerSP RT = nullptr) {
     if (!RT)
       RT = MainJD.getDefaultResourceTracker();
     return CompileLayer.add(RT, std::move(TSM));
   }
 
-  Expected<JITEvaluatedSymbol> lookup(StringRef Name) {
+  llvm::Expected<llvm::JITEvaluatedSymbol> lookup(llvm::StringRef Name) {
     return ES->lookup({&MainJD}, Mangle(Name.str()));
   }
 };
 
-} // end namespace orc
-} // end namespace llvm
-
-#endif // LLVM_EXECUTIONENGINE_ORC_KALEIDOSCOPEJIT_H
+} // namespace MyDSL
