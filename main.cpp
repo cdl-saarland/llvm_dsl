@@ -1,3 +1,4 @@
+#include "control_flow.hpp"
 #include "float_ops.hpp"
 #include "int_ops.hpp"
 #include "jit.hpp"
@@ -26,9 +27,15 @@ using namespace MyDSL;
 Float kernel(llvm::Value *A, llvm::Value *B, llvm::IRBuilder<> &Builder) {
   Float a(A, Builder);
   Float b(B, Builder);
-  return static_cast<Float>(static_cast<Integer>(a + b) -
-                            static_cast<Integer>(a + b));
-  // return (a + b) - (a + b);
+
+  ControlFlow CF(Builder);
+  return CF.If<Float>(
+      a < b,
+      [&]() {
+        return static_cast<Float>(static_cast<Integer>(a + b) -
+                                  static_cast<Integer>(a + b));
+      },
+      [&]() { return (a + b) - (a + b); });
 }
 
 llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,

@@ -120,6 +120,10 @@ public:
   }
   // operator bool() const { return jit::evaluate<bool>(value_); }
   // operator int() const { return jit::evaluate<int>(value_); }
+
+  llvm::Type *getType() const { return value_->getType(); }
+
+  operator llvm::Value *() const { return value_; }
 };
 
 #endif

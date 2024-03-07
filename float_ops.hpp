@@ -184,6 +184,8 @@ public:
     return os;
   }
 
+  llvm::Type *getType() const { return value_->getType(); }
+
   llvm::Value *getValue() const { return value_; }
 
   operator llvm::Value *() const { return value_; }

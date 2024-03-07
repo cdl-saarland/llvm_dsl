@@ -6,6 +6,7 @@ include(AddLLVM)
 
 add_llvm_executable(YourDSL
   main.cpp
+  control_flow.cpp
   int_ops.cpp
   float_ops.cpp
 )
