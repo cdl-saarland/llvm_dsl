@@ -1,5 +1,6 @@
 #pragma once
 
+#include "base_ops.hpp"
 #include <cmath>
 #include <cstdint>
 #include <ostream>
@@ -96,18 +97,18 @@ public:
 };
 
 #else
-class Integer {
-  llvm::IRBuilder<> &builder_;
-  llvm::Value *value_;
-
+class Integer : public BaseOps {
 public:
   Integer(std::size_t bits, std::uint64_t value, llvm::IRBuilder<> &builder)
-      : builder_(builder) {
-    value_ =
-        llvm::ConstantInt::get(builder.getContext(), llvm::APInt(bits, value));
-  }
+      : BaseOps(llvm::ConstantInt::get(builder.getContext(),
+                                       llvm::APInt(bits, value)),
+                builder) {}
   Integer(llvm::Value *value, llvm::IRBuilder<> &builder)
-      : builder_(builder), value_(value) {}
+      : BaseOps(value, builder) {}
+
+  explicit Integer(const BaseOps &base) : BaseOps(base) {
+    assert(base.getType()->isIntegerTy());
+  }
 
   /// arithmetic operators
   Integer operator+(const Integer &other) const {
@@ -181,20 +182,6 @@ public:
   // operator std::uint64_t() const {
   //   return jit::evaluate<std::uint64_t>(value_);
   // }
-
-  friend std::ostream &operator<<(std::ostream &os, const Integer &f) {
-    std::string str;
-    llvm::raw_string_ostream ros(str);
-    ros << *f.value_;
-    os << str;
-    return os;
-  }
-
-  llvm::Type *getType() const { return value_->getType(); }
-
-  llvm::Value *getValue() const { return value_; }
-
-  operator llvm::Value *() const { return value_; }
 
   explicit operator Float() const;
 };

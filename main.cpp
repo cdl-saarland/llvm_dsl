@@ -113,7 +113,6 @@ int main(int argc, const char *argv[]) {
   float (*FP)(float, float) = (float (*)(float, float))ExprSymbol.getAddress();
   fprintf(stderr, "Evaluated to %f\n", FP(5, 2));
 
-  // Delete the anonymous expression module from the JIT.
   ExitOnErr(RT->remove());
 
   return 0;

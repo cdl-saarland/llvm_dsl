@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base_ops.hpp"
+
 #include <cmath>
 #include <ostream>
 
@@ -71,16 +73,16 @@ public:
 #include <llvm/IR/IRBuilder.h>
 
 namespace MyDSL {
-class Bool {
-  llvm::IRBuilder<> &builder_;
-  llvm::Value *value_;
-
+class Bool : public BaseOps {
 public:
-  Bool(bool value, llvm::IRBuilder<> &builder) : builder_(builder) {
-    value_ = builder_.getInt1(value);
-  }
+  Bool(bool value, llvm::IRBuilder<> &builder)
+      : BaseOps(builder.getInt1(value), builder) {}
   Bool(llvm::Value *value, llvm::IRBuilder<> &builder)
-      : builder_(builder), value_(value) {}
+      : BaseOps(value, builder) {}
+
+  explicit Bool(const BaseOps &base) : BaseOps(base) {
+    assert(base.getType()->isIntegerTy(1));
+  }
 
   // Logical operators
   Bool operator&&(const Bool &other) const {
@@ -111,19 +113,8 @@ public:
     return {builder_.CreateICmpUGE(value_, other.value_), builder_};
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const Bool &b) {
-    std::string str;
-    llvm::raw_string_ostream ros(str);
-    ros << *b.value_;
-    os << str;
-    return os;
-  }
   // operator bool() const { return jit::evaluate<bool>(value_); }
   // operator int() const { return jit::evaluate<int>(value_); }
-
-  llvm::Type *getType() const { return value_->getType(); }
-
-  operator llvm::Value *() const { return value_; }
 };
 
 #endif

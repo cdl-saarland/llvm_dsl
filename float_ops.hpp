@@ -3,6 +3,7 @@
 #include <cmath>
 #include <ostream>
 
+#include "base_ops.hpp"
 #include "bool_ops.hpp"
 
 #ifdef WITH_JIT
@@ -93,16 +94,18 @@ public:
 };
 
 #else
-class Float {
-  llvm::IRBuilder<> &builder_;
-  llvm::Value *value_;
-
+class Float : public BaseOps {
 public:
-  Float(float value, llvm::IRBuilder<> &builder) : builder_(builder) {
-    value_ = llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(value));
-  }
+  Float(float value, llvm::IRBuilder<> &builder)
+      : BaseOps(
+            llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(value)),
+            builder) {}
   Float(llvm::Value *value, llvm::IRBuilder<> &builder)
-      : builder_(builder), value_(value) {}
+      : BaseOps(value, builder) {}
+
+  explicit Float(const BaseOps &base) : BaseOps(base) {
+    assert(base.getType()->isFloatTy());
+  }
 
   /// arithmetic operators
   Float operator+(const Float &other) const {
@@ -175,20 +178,6 @@ public:
   // operator float() const {
   //   return jit::evaluate<float>(value_);
   // }
-
-  friend std::ostream &operator<<(std::ostream &os, const Float &f) {
-    std::string str;
-    llvm::raw_string_ostream ros(str);
-    ros << *f.value_;
-    os << str;
-    return os;
-  }
-
-  llvm::Type *getType() const { return value_->getType(); }
-
-  llvm::Value *getValue() const { return value_; }
-
-  operator llvm::Value *() const { return value_; }
 
   explicit operator Integer() const;
 };
