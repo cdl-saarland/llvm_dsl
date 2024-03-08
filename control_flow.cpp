@@ -35,9 +35,8 @@ void ControlFlow::If(Bool Cond, const std::function<void()> &ThenTgt,
   builder_.SetInsertPoint(Merge);
 }
 
-BaseOps ControlFlow::IfImpl(Bool Cond,
-                        const std::function<BaseOps()> &Then,
-                        const std::function<BaseOps()> &Else) {
+BaseOps ControlFlow::IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
+                            const std::function<BaseOps()> &Else) {
   llvm::Function *F = builder_.GetInsertBlock()->getParent();
   llvm::BasicBlock *ThenBB =
       llvm::BasicBlock::Create(builder_.getContext(), "then", F);
@@ -50,27 +49,51 @@ BaseOps ControlFlow::IfImpl(Bool Cond,
 
   builder_.SetInsertPoint(ThenBB);
   auto ThenRet = Then();
-  const bool ThenHasTerm = builder_.GetInsertBlock()->getTerminator();
-  if (!ThenHasTerm)
-    builder_.CreateBr(MergeBB);
+  auto *ThenTerm = builder_.GetInsertBlock()->getTerminator();
+  if (!ThenTerm)
+    ThenTerm = builder_.CreateBr(MergeBB);
 
   builder_.SetInsertPoint(ElseBB);
   auto ElseRet = Else();
-  const bool ElseHasTerm = builder_.GetInsertBlock()->getTerminator();
-  if (!ElseHasTerm)
-    builder_.CreateBr(MergeBB);
+  auto *ElseTerm = builder_.GetInsertBlock()->getTerminator();
+  if (!ElseTerm)
+    ElseTerm = builder_.CreateBr(MergeBB);
+
+  assert(ThenRet.getType() == ElseRet.getType());
+  BaseOps Ret{ThenRet.getType(), builder_};
+
+  builder_.SetInsertPoint(ThenTerm);
+  Ret = ThenRet;
+  builder_.SetInsertPoint(ElseTerm);
+  Ret = ElseRet;
 
   builder_.SetInsertPoint(MergeBB);
 
-  // this variant requires that at least one branch returns.
-  assert(!ThenHasTerm || !ElseHasTerm);
+  return Ret;
+}
 
-  llvm::PHINode *PN = builder_.CreatePHI(ThenRet.getType(), 2);
-  if (!ThenHasTerm)
-    PN->addIncoming(ThenRet, ThenBB);
-  if (!ElseHasTerm)
-    PN->addIncoming(ElseRet, ElseBB);
-  return {PN, builder_};
+void ControlFlow::While(const std::function<Bool()> &Cond,
+                        const std::function<void()> &Body) {
+  llvm::Function *F = builder_.GetInsertBlock()->getParent();
+  llvm::BasicBlock *CondBB =
+      llvm::BasicBlock::Create(builder_.getContext(), "cond", F);
+  llvm::BasicBlock *BodyBB =
+      llvm::BasicBlock::Create(builder_.getContext(), "body", F);
+  llvm::BasicBlock *AfterBB =
+      llvm::BasicBlock::Create(builder_.getContext(), "afterloop", F);
+
+  builder_.CreateBr(CondBB);
+  builder_.SetInsertPoint(CondBB);
+  builder_.CreateCondBr(Cond(), BodyBB, AfterBB);
+
+  builder_.SetInsertPoint(BodyBB);
+
+  Body();
+  const bool BodyHasTerm = builder_.GetInsertBlock()->getTerminator();
+  if (!BodyHasTerm)
+    builder_.CreateBr(CondBB);
+
+  builder_.SetInsertPoint(AfterBB);
 }
 
 void ControlFlow::Return() { builder_.CreateRetVoid(); }

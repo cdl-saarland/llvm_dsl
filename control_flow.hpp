@@ -15,7 +15,7 @@ class ControlFlow {
   llvm::IRBuilder<> &builder_;
 
   BaseOps IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
-             const std::function<BaseOps()> &Else = nullptr);
+                 const std::function<BaseOps()> &Else = nullptr);
 
 public:
   ControlFlow(llvm::IRBuilder<> &builder) : builder_(builder) {}
@@ -31,7 +31,9 @@ public:
         [&]() -> BaseOps { return Else(); }));
   }
 
-  void While(const Bool &Cond, const std::function<void()> &Body);
+  void While(const std::function<Bool()> &Cond,
+             const std::function<void()> &Body);
+
   void For(const Integer &Start, const Bool &Cond,
            const std::function<void()> &Body,
            const std::function<void()> &Step);

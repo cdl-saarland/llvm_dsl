@@ -21,6 +21,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Transforms/Scalar/LoopPassManager.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
 
 using namespace MyDSL;
 
@@ -29,13 +30,20 @@ Float kernel(llvm::Value *A, llvm::Value *B, llvm::IRBuilder<> &Builder) {
   Float b(B, Builder);
 
   ControlFlow CF(Builder);
-  return CF.If<Float>(
-      a < b,
-      [&]() {
-        return static_cast<Float>(static_cast<Integer>(a + b) -
-                                  static_cast<Integer>(a + b));
-      },
-      [&]() { return (a + b) - (a + b); });
+  // return CF.If<Float>(
+  //     a < b,
+  //     [&]() {
+  //       a += b;
+  //       return static_cast<Float>(static_cast<Integer>(a + b) -
+  //                                 static_cast<Integer>(a + b));
+  //     },
+  //     [&]() { return (a + b) - (a + b); });
+  CF.While([&]() { return a < b; },
+                  [&]() {
+                    a += 1;
+                    b -= 1;
+                  });
+  return a + b + a;
 }
 
 llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,
@@ -62,6 +70,10 @@ void optimize(llvm::Module *M) {
   PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
   auto MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+  // llvm::ModulePassManager MPM;
+  // llvm::FunctionPassManager FPM;
+  // FPM.addPass(llvm::PromotePass());
+  // MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
   MPM.run(*M, MAM);
 }
 
@@ -111,7 +123,7 @@ int main(int argc, const char *argv[]) {
   auto ExprSymbol = JIT->lookup("kernel").get();
 
   float (*FP)(float, float) = (float (*)(float, float))ExprSymbol.getAddress();
-  fprintf(stderr, "Evaluated to %f\n", FP(5, 2));
+  fprintf(stderr, "Evaluated to %f\n", FP(2, 5));
 
   ExitOnErr(RT->remove());
 
