@@ -74,6 +74,10 @@ public:
 
 namespace MyDSL {
 class Bool : public BaseOps {
+  Bool getConst(bool value) const {
+    return {builder_.getInt1(value), builder_};
+  }
+
 public:
   Bool(bool value, llvm::IRBuilder<> &builder)
       : BaseOps(builder.getInt1(value), builder) {}
@@ -86,35 +90,69 @@ public:
 
   // Logical operators
   Bool operator&&(const Bool &other) const {
-    return {builder_.CreateAnd(value_, other.value_), builder_};
+    return {builder_.CreateAnd(getValue(), other.getValue()), builder_};
   }
   Bool operator||(const Bool &other) const {
-    return {builder_.CreateOr(value_, other.value_), builder_};
+    return {builder_.CreateOr(getValue(), other.getValue()), builder_};
   }
-  Bool operator!() const { return {builder_.CreateNot(value_), builder_}; }
+  Bool operator!() const { return {builder_.CreateNot(getValue()), builder_}; }
+
+  Bool operator&&(bool other) const {
+    return *this && getConst(other);
+  }
+  Bool operator||(bool other) const {
+    return *this || getConst(other);
+  }
+  friend Bool operator&&(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) && rhs; }
+  friend Bool operator||(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) || rhs; }
 
   // Relational operators
   Bool operator==(const Bool &other) const {
-    return {builder_.CreateICmpEQ(value_, other.value_), builder_};
+    return {builder_.CreateICmpEQ(getValue(), other.getValue()), builder_};
   }
   Bool operator!=(const Bool &other) const {
-    return {builder_.CreateICmpNE(value_, other.value_), builder_};
+    return {builder_.CreateICmpNE(getValue(), other.getValue()), builder_};
   }
   Bool operator<(const Bool &other) const {
-    return {builder_.CreateICmpULT(value_, other.value_), builder_};
+    return {builder_.CreateICmpULT(getValue(), other.getValue()), builder_};
   }
   Bool operator<=(const Bool &other) const {
-    return {builder_.CreateICmpULE(value_, other.value_), builder_};
+    return {builder_.CreateICmpULE(getValue(), other.getValue()), builder_};
   }
   Bool operator>(const Bool &other) const {
-    return {builder_.CreateICmpUGT(value_, other.value_), builder_};
+    return {builder_.CreateICmpUGT(getValue(), other.getValue()), builder_};
   }
   Bool operator>=(const Bool &other) const {
-    return {builder_.CreateICmpUGE(value_, other.value_), builder_};
+    return {builder_.CreateICmpUGE(getValue(), other.getValue()), builder_};
   }
 
-  // operator bool() const { return jit::evaluate<bool>(value_); }
-  // operator int() const { return jit::evaluate<int>(value_); }
+  Bool operator==(bool other) const {
+    return *this == getConst(other);
+  }
+  Bool operator!=(bool other) const {
+    return *this != getConst(other);
+  }
+  Bool operator<(bool other) const {
+    return *this < getConst(other);
+  }
+  Bool operator<=(bool other) const {
+    return *this <= getConst(other);
+  }
+  Bool operator>(bool other) const {
+    return *this > getConst(other);
+  }
+  Bool operator>=(bool other) const {
+    return *this >= getConst(other);
+  }
+  friend Bool operator==(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) == rhs; }
+  friend Bool operator!=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) != rhs; }
+  friend Bool operator<(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) < rhs; }
+  friend Bool operator<=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) <= rhs; }
+  friend Bool operator>(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) > rhs; }
+  friend Bool operator>=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) >= rhs; }
+
+  // operator bool() const { return jit::evaluate<bool>(getValue()); }
+  // operator int() const { return jit::evaluate<int>(getValue()); }
 };
 
 #endif

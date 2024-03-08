@@ -7,6 +7,7 @@
 #include "bool_ops.hpp"
 
 #ifdef WITH_JIT
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
 #endif
@@ -95,6 +96,11 @@ public:
 
 #else
 class Float : public BaseOps {
+  Float getConst(float value) const {
+    return {llvm::ConstantFP::get(builder_.getContext(), llvm::APFloat(value)),
+            builder_};
+  }
+
 public:
   Float(float value, llvm::IRBuilder<> &builder)
       : BaseOps(
@@ -107,76 +113,114 @@ public:
     assert(base.getType()->isFloatTy());
   }
 
+  // Float &operator=(const Float &other) {
+  //   getValue() = other.getValue();
+  //   return *this;
+  // }
+
+  // Float &operator=(const BaseOps &base) {
+  //   if (base.getType()->isFloatTy()) {
+  //     getValue() = base.getValue();
+  //   } else {
+  //     *this = static_cast<Float>(base);
+  //   }
+  //   assert(base.getType()->isFloatTy());
+  //   return *this;
+  // }
+
   /// arithmetic operators
   Float operator+(const Float &other) const {
-    return {builder_.CreateFAdd(value_, other.value_), builder_};
+    return {builder_.CreateFAdd(getValue(), other.getValue()), builder_};
   }
   Float operator-(const Float &other) const {
-    return {builder_.CreateFSub(value_, other.value_), builder_};
+    return {builder_.CreateFSub(getValue(), other.getValue()), builder_};
   }
   Float operator*(const Float &other) const {
-    return {builder_.CreateFMul(value_, other.value_), builder_};
+    return {builder_.CreateFMul(getValue(), other.getValue()), builder_};
   }
   Float operator/(const Float &other) const {
-    return {builder_.CreateFDiv(value_, other.value_), builder_};
+    return {builder_.CreateFDiv(getValue(), other.getValue()), builder_};
   }
-  Float operator-() const { return {builder_.CreateFNeg(value_), builder_}; }
+  Float operator-() const { return {builder_.CreateFNeg(getValue()), builder_}; }
+
+  Float operator+(float f) const { return *this + getConst(f); }
+  Float operator-(float f) const { return *this - getConst(f); }
+  Float operator*(float f) const { return *this * getConst(f); }
+  Float operator/(float f) const { return *this / getConst(f); }
 
   /// relational operators
   Bool operator==(const Float &other) const {
-    return {builder_.CreateFCmpOEQ(value_, other.value_), builder_};
+    return {builder_.CreateFCmpOEQ(getValue(), other.getValue()), builder_};
   }
   Bool operator!=(const Float &other) const {
-    return {builder_.CreateFCmpONE(value_, other.value_), builder_};
+    return {builder_.CreateFCmpONE(getValue(), other.getValue()), builder_};
   }
   Bool operator<(const Float &other) const {
-    return {builder_.CreateFCmpOLT(value_, other.value_), builder_};
+    return {builder_.CreateFCmpOLT(getValue(), other.getValue()), builder_};
   }
   Bool operator<=(const Float &other) const {
-    return {builder_.CreateFCmpOLE(value_, other.value_), builder_};
+    return {builder_.CreateFCmpOLE(getValue(), other.getValue()), builder_};
   }
   Bool operator>(const Float &other) const {
-    return {builder_.CreateFCmpOGT(value_, other.value_), builder_};
+    return {builder_.CreateFCmpOGT(getValue(), other.getValue()), builder_};
   }
   Bool operator>=(const Float &other) const {
-    return {builder_.CreateFCmpOGE(value_, other.value_), builder_};
+    return {builder_.CreateFCmpOGE(getValue(), other.getValue()), builder_};
   }
+
+  Bool operator==(float f) const { return *this == getConst(f); }
+  Bool operator!=(float f) const { return *this != getConst(f); }
+  Bool operator<(float f) const { return *this < getConst(f); }
+  Bool operator<=(float f) const { return *this <= getConst(f); }
+  Bool operator>(float f) const { return *this > getConst(f); }
+  Bool operator>=(float f) const { return *this >= getConst(f); }
 
   /// compound assignment operators
   Float &operator+=(const Float &other) {
-    value_ = builder_.CreateFAdd(value_, other.value_);
+    store(builder_.CreateFAdd(getValue(), other.getValue()));
     return *this;
   }
   Float &operator-=(const Float &other) {
-    value_ = builder_.CreateFSub(value_, other.value_);
+    store(builder_.CreateFSub(getValue(), other.getValue()));
     return *this;
   }
   Float &operator*=(const Float &other) {
-    value_ = builder_.CreateFMul(value_, other.value_);
+    store(builder_.CreateFMul(getValue(), other.getValue()));
     return *this;
   }
   Float &operator/=(const Float &other) {
-    value_ = builder_.CreateFDiv(value_, other.value_);
+    store(builder_.CreateFDiv(getValue(), other.getValue()));
     return *this;
   }
 
+  Float &operator+=(float f) { return *this += getConst(f); }
+  Float &operator-=(float f) { return *this -= getConst(f); }
+  Float &operator*=(float f) { return *this *= getConst(f); }
+  Float &operator/=(float f) { return *this /= getConst(f); }
+  
   Float operator%(const Float &other) const {
-    return {builder_.CreateFRem(value_, other.value_), builder_};
+    return {builder_.CreateFRem(getValue(), other.getValue()), builder_};
   }
+  
   Float &operator%=(const Float &other) {
-    value_ = builder_.CreateFRem(value_, other.value_);
+    store(builder_.CreateFRem(getValue(), other.getValue()));
     return *this;
   }
+
+  Float &operator%= (float f) { return *this %= getConst(f); }
+
   Float operator^(const Float &other) const {
     return {builder_.CreateCall(llvm::Intrinsic::getDeclaration(
                                     builder_.GetInsertBlock()->getModule(),
-                                    llvm::Intrinsic::pow, {value_->getType()}),
-                                {value_, other.value_}),
+                                    llvm::Intrinsic::pow, {getValue()->getType()}),
+                                {getValue(), other.getValue()}),
             builder_};
   }
 
+  Float operator^(float f) const { return *this ^ getConst(f); }
+  
   // operator float() const {
-  //   return jit::evaluate<float>(value_);
+  //   return jit::evaluate<float>(getValue());
   // }
 
   explicit operator Integer() const;

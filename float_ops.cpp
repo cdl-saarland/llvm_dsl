@@ -8,7 +8,7 @@
 
 namespace MyDSL {
 Float::operator Integer() const {
-  return {builder_.CreateFPToSI(value_,
+  return {builder_.CreateFPToSI(getValue(),
                                 llvm::Type::getInt64Ty(builder_.getContext())),
           builder_};
 }

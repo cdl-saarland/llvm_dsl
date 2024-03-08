@@ -3,6 +3,7 @@
 #include "base_ops.hpp"
 #include <cmath>
 #include <cstdint>
+#include <llvm/IR/Constant.h>
 #include <ostream>
 
 #ifdef WITH_JIT
@@ -98,11 +99,20 @@ public:
 
 #else
 class Integer : public BaseOps {
-public:
+  Integer getConst(std::size_t bits, std::uint64_t value) const {
+    return {builder_.getIntN(bits, value), builder_};
+  }
   Integer(std::size_t bits, std::uint64_t value, llvm::IRBuilder<> &builder)
       : BaseOps(llvm::ConstantInt::get(builder.getContext(),
                                        llvm::APInt(bits, value)),
                 builder) {}
+
+public:
+  Integer(std::uint64_t value, llvm::IRBuilder<> &builder)
+      : BaseOps(llvm::ConstantInt::get(builder.getContext(),
+                                       llvm::APInt(64, value)),
+                builder) {}
+
   Integer(llvm::Value *value, llvm::IRBuilder<> &builder)
       : BaseOps(value, builder) {}
 
@@ -112,75 +122,180 @@ public:
 
   /// arithmetic operators
   Integer operator+(const Integer &other) const {
-    return {builder_.CreateAdd(value_, other.value_), builder_};
+    return {builder_.CreateAdd(getValue(), other.getValue()), builder_};
   }
   Integer operator-(const Integer &other) const {
-    return {builder_.CreateSub(value_, other.value_), builder_};
+    return {builder_.CreateSub(getValue(), other.getValue()), builder_};
   }
   Integer operator*(const Integer &other) const {
-    return {builder_.CreateMul(value_, other.value_), builder_};
+    return {builder_.CreateMul(getValue(), other.getValue()), builder_};
   }
   Integer operator/(const Integer &other) const {
-    // What if we're unsigned? :)
-    return {builder_.CreateSDiv(value_, other.value_), builder_};
+    return {builder_.CreateSDiv(getValue(), other.getValue()), builder_};
   }
-  Integer operator-() const { return {builder_.CreateNeg(value_), builder_}; }
+  Integer operator-() const {
+    return {builder_.CreateNeg(getValue()), builder_};
+  }
+
+  Integer operator%(const Integer &other) const {
+    return {builder_.CreateSRem(getValue(), other.getValue()), builder_};
+  }
+  Integer operator^(const Integer &other) const {
+    return {
+        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+                                builder_.GetInsertBlock()->getModule(),
+                                llvm::Intrinsic::pow, {getValue()->getType()}),
+                            {getValue(), other.getValue()}),
+        builder_};
+  }
+
+  Integer operator+(std::uint64_t value) const {
+    return *this + getConst(64, value);
+  }
+  Integer operator-(std::uint64_t value) const {
+    return *this - getConst(64, value);
+  }
+  Integer operator*(std::uint64_t value) const {
+    return *this * getConst(64, value);
+  }
+  Integer operator/(std::uint64_t value) const {
+    return *this / getConst(64, value);
+  }
+  Integer operator%(std::uint64_t value) const {
+    return *this % getConst(64, value);
+  }
+  Integer operator^(std::uint64_t value) const {
+    return *this ^ getConst(64, value);
+  }
+
+  friend Integer operator+(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) + other;
+  }
+  friend Integer operator-(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) - other;
+  }
+  friend Integer operator*(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) * other;
+  }
+  friend Integer operator/(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) / other;
+  }
+  friend Integer operator%(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) % other;
+  }
+  friend Integer operator^(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) ^ other;
+  }
 
   /// relational operators
   Bool operator==(const Integer &other) const {
-    return {builder_.CreateICmpEQ(value_, other.value_), builder_};
+    return {builder_.CreateICmpEQ(getValue(), other.getValue()), builder_};
   }
   Bool operator!=(const Integer &other) const {
-    return {builder_.CreateICmpNE(value_, other.value_), builder_};
+    return {builder_.CreateICmpNE(getValue(), other.getValue()), builder_};
   }
   Bool operator<(const Integer &other) const {
-    return {builder_.CreateICmpSLT(value_, other.value_), builder_};
+    return {builder_.CreateICmpSLT(getValue(), other.getValue()), builder_};
   }
   Bool operator<=(const Integer &other) const {
-    return {builder_.CreateICmpSLE(value_, other.value_), builder_};
+    return {builder_.CreateICmpSLE(getValue(), other.getValue()), builder_};
   }
   Bool operator>(const Integer &other) const {
-    return {builder_.CreateICmpSGT(value_, other.value_), builder_};
+    return {builder_.CreateICmpSGT(getValue(), other.getValue()), builder_};
   }
   Bool operator>=(const Integer &other) const {
-    return {builder_.CreateICmpSGE(value_, other.value_), builder_};
+    return {builder_.CreateICmpSGE(getValue(), other.getValue()), builder_};
+  }
+
+  Bool operator==(std::uint64_t value) const {
+    return *this == getConst(64, value);
+  }
+  Bool operator!=(std::uint64_t value) const {
+    return *this != getConst(64, value);
+  }
+  Bool operator<(std::uint64_t value) const {
+    return *this < getConst(64, value);
+  }
+  Bool operator<=(std::uint64_t value) const {
+    return *this <= getConst(64, value);
+  }
+  Bool operator>(std::uint64_t value) const {
+    return *this > getConst(64, value);
+  }
+  Bool operator>=(std::uint64_t value) const {
+    return *this >= getConst(64, value);
+  }
+
+  friend Bool operator==(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) == other;
+  }
+  friend Bool operator!=(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) != other;
+  }
+  friend Bool operator<(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) < other;
+  }
+  friend Bool operator<=(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) <= other;
+  }
+  friend Bool operator>(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) > other;
+  }
+  friend Bool operator>=(std::uint64_t value, const Integer &other) {
+    return other.getConst(64, value) >= other;
   }
 
   /// compound assignment operators
   Integer &operator+=(const Integer &other) {
-    value_ = builder_.CreateAdd(value_, other.value_);
+    store(builder_.CreateAdd(getValue(), other.getValue()));
     return *this;
   }
   Integer &operator-=(const Integer &other) {
-    value_ = builder_.CreateSub(value_, other.value_);
+    store(builder_.CreateSub(getValue(), other.getValue()));
     return *this;
   }
   Integer &operator*=(const Integer &other) {
-    value_ = builder_.CreateMul(value_, other.value_);
+    store(builder_.CreateMul(getValue(), other.getValue()));
     return *this;
   }
   Integer &operator/=(const Integer &other) {
-    value_ = builder_.CreateSDiv(value_, other.value_);
+    store(builder_.CreateSDiv(getValue(), other.getValue()));
+    return *this;
+  }
+  Integer &operator%=(const Integer &other) {
+    store(builder_.CreateSRem(getValue(), other.getValue()));
+    return *this;
+  }
+  Integer &operator^=(const Integer &other) {
+    store(builder_.CreateCall(
+        llvm::Intrinsic::getDeclaration(builder_.GetInsertBlock()->getModule(),
+                                        llvm::Intrinsic::pow,
+                                        {getValue()->getType()}),
+        {getValue(), other.getValue()}));
     return *this;
   }
 
-  Integer operator%(const Integer &other) const {
-    return {builder_.CreateSRem(value_, other.value_), builder_};
+  Integer &operator+=(std::uint64_t value) {
+    return *this += getConst(64, value);
   }
-  Integer &operator%=(const Integer &other) {
-    value_ = builder_.CreateSRem(value_, other.value_);
-    return *this;
+  Integer &operator-=(std::uint64_t value) {
+    return *this -= getConst(64, value);
   }
-  Integer operator^(const Integer &other) const {
-    return {builder_.CreateCall(llvm::Intrinsic::getDeclaration(
-                                    builder_.GetInsertBlock()->getModule(),
-                                    llvm::Intrinsic::pow, {value_->getType()}),
-                                {value_, other.value_}),
-            builder_};
+  Integer &operator*=(std::uint64_t value) {
+    return *this *= getConst(64, value);
+  }
+  Integer &operator/=(std::uint64_t value) {
+    return *this /= getConst(64, value);
+  }
+  Integer &operator%=(std::uint64_t value) {
+    return *this %= getConst(64, value);
+  }
+  Integer &operator^=(std::uint64_t value) {
+    return *this ^= getConst(64, value);
   }
 
   // operator std::uint64_t() const {
-  //   return jit::evaluate<std::uint64_t>(value_);
+  //   return jit::evaluate<std::uint64_t>(getValue());
   // }
 
   explicit operator Float() const;
