@@ -10,6 +10,7 @@ add_llvm_executable(YourDSL
   int_ops.cpp
   float_ops.cpp
 )
+set_property(TARGET YourDSL PROPERTY CXX_STANDARD 20)
 
 target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSL PUBLIC LLVM)

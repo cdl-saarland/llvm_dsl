@@ -113,21 +113,6 @@ public:
     assert(base.getType()->isFloatTy());
   }
 
-  // Float &operator=(const Float &other) {
-  //   getValue() = other.getValue();
-  //   return *this;
-  // }
-
-  // Float &operator=(const BaseOps &base) {
-  //   if (base.getType()->isFloatTy()) {
-  //     getValue() = base.getValue();
-  //   } else {
-  //     *this = static_cast<Float>(base);
-  //   }
-  //   assert(base.getType()->isFloatTy());
-  //   return *this;
-  // }
-
   /// arithmetic operators
   Float operator+(const Float &other) const {
     return {builder_.CreateFAdd(getValue(), other.getValue()), builder_};

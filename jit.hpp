@@ -23,6 +23,7 @@
 
 namespace MyDSL {
 
+/// A class to manage the JIT.
 class Jit {
 private:
   std::unique_ptr<llvm::orc::ExecutionSession> ES;
@@ -35,7 +36,7 @@ private:
 
   llvm::orc::JITDylib &MainJD;
 
-public:
+  /// Use #Create to create a new instance.
   Jit(std::unique_ptr<llvm::orc::ExecutionSession> ES,
       llvm::orc::JITTargetMachineBuilder JTMB, llvm::DataLayout DL)
       : ES(std::move(ES)), DL(std::move(DL)), Mangle(*this->ES, this->DL),
@@ -55,11 +56,13 @@ public:
     }
   }
 
+public:
   ~Jit() {
     if (auto Err = ES->endSession())
       ES->reportError(std::move(Err));
   }
 
+  /// Creates a new instance of Jit.
   static llvm::Expected<std::unique_ptr<Jit>> Create() {
     auto EPC = llvm::orc::SelfExecutorProcessControl::Create();
     if (!EPC)
@@ -74,14 +77,19 @@ public:
     if (!DL)
       return DL.takeError();
 
-    return std::make_unique<Jit>(std::move(ES), std::move(JTMB),
-                                 std::move(*DL));
+    return std::unique_ptr<Jit>(
+        new Jit(std::move(ES), std::move(JTMB), std::move(*DL)));
   }
 
+  /// Returns the selected data layout.
   const llvm::DataLayout &getDataLayout() const { return DL; }
 
+  /// Returns a handle to the shared library containing the JITed code.
   llvm::orc::JITDylib &getMainJITDylib() { return MainJD; }
 
+  /// Adds a module to the JIT.
+  /// Needs to be a ThreadSafeModule and also takes an ResouceTrackerSP
+  /// from the JITDylib.
   llvm::Error addModule(llvm::orc::ThreadSafeModule TSM,
                         llvm::orc::ResourceTrackerSP RT = nullptr) {
     if (!RT)
@@ -89,6 +97,9 @@ public:
     return CompileLayer.add(RT, std::move(TSM));
   }
 
+  /// Looks up a symbol in the JITed shared library.
+  /// Use ->getAddress() to get the address, then cast the address to the
+  /// function pointer type to use it.
   llvm::Expected<llvm::JITEvaluatedSymbol> lookup(llvm::StringRef Name) {
     return ES->lookup({&MainJD}, Mangle(Name.str()));
   }

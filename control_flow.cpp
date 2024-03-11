@@ -15,10 +15,12 @@ void ControlFlow::If(Bool Cond, const std::function<void()> &ThenTgt,
   llvm::Function *F = builder_.GetInsertBlock()->getParent();
   llvm::BasicBlock *Then =
       llvm::BasicBlock::Create(builder_.getContext(), "then", F);
-  llvm::BasicBlock *Else =
-      llvm::BasicBlock::Create(builder_.getContext(), "else", F);
   llvm::BasicBlock *Merge =
       llvm::BasicBlock::Create(builder_.getContext(), "ifcont", F);
+
+  llvm::BasicBlock *Else = Merge;
+  if (ElseTgt)
+    Else = llvm::BasicBlock::Create(builder_.getContext(), "else", F);
 
   builder_.CreateCondBr(Cond, Then, Else);
 
@@ -27,10 +29,12 @@ void ControlFlow::If(Bool Cond, const std::function<void()> &ThenTgt,
   if (!builder_.GetInsertBlock()->getTerminator())
     builder_.CreateBr(Merge);
 
-  builder_.SetInsertPoint(Else);
-  ElseTgt();
-  if (!builder_.GetInsertBlock()->getTerminator())
-    builder_.CreateBr(Merge);
+  if (ElseTgt) {
+    builder_.SetInsertPoint(Else);
+    ElseTgt();
+    if (!builder_.GetInsertBlock()->getTerminator())
+      builder_.CreateBr(Merge);
+  }
 
   builder_.SetInsertPoint(Merge);
 }
@@ -40,10 +44,12 @@ BaseOps ControlFlow::IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
   llvm::Function *F = builder_.GetInsertBlock()->getParent();
   llvm::BasicBlock *ThenBB =
       llvm::BasicBlock::Create(builder_.getContext(), "then", F);
-  llvm::BasicBlock *ElseBB =
-      llvm::BasicBlock::Create(builder_.getContext(), "else", F);
   llvm::BasicBlock *MergeBB =
       llvm::BasicBlock::Create(builder_.getContext(), "ifcont", F);
+
+  llvm::BasicBlock *ElseBB = MergeBB;
+  if (Else)
+    ElseBB = llvm::BasicBlock::Create(builder_.getContext(), "else", F);
 
   builder_.CreateCondBr(Cond, ThenBB, ElseBB);
 
@@ -53,19 +59,22 @@ BaseOps ControlFlow::IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
   if (!ThenTerm)
     ThenTerm = builder_.CreateBr(MergeBB);
 
-  builder_.SetInsertPoint(ElseBB);
-  auto ElseRet = Else();
-  auto *ElseTerm = builder_.GetInsertBlock()->getTerminator();
-  if (!ElseTerm)
-    ElseTerm = builder_.CreateBr(MergeBB);
-
-  assert(ThenRet.getType() == ElseRet.getType());
   BaseOps Ret{ThenRet.getType(), builder_};
 
   builder_.SetInsertPoint(ThenTerm);
   Ret = ThenRet;
-  builder_.SetInsertPoint(ElseTerm);
-  Ret = ElseRet;
+
+  if (Else) {
+    builder_.SetInsertPoint(ElseBB);
+    auto ElseRet = Else();
+    auto *ElseTerm = builder_.GetInsertBlock()->getTerminator();
+    if (!ElseTerm)
+      ElseTerm = builder_.CreateBr(MergeBB);
+
+    assert(ThenRet.getType() == ElseRet.getType());
+    builder_.SetInsertPoint(ElseTerm);
+    Ret = ElseRet;
+  }
 
   builder_.SetInsertPoint(MergeBB);
 
@@ -94,6 +103,18 @@ void ControlFlow::While(const std::function<Bool()> &Cond,
     builder_.CreateBr(CondBB);
 
   builder_.SetInsertPoint(AfterBB);
+}
+
+void ControlFlow::For(const Integer &Start,
+                      const std::function<Bool(const Integer &)> &Cond,
+                      const std::function<Integer(const Integer &)> &Step,
+                      const std::function<void(const Integer &)> &Body) {
+  Integer I{Start};
+  While([&]() { return Cond(I); },
+        [&]() {
+          Body(I);
+          I = Step(I);
+        });
 }
 
 void ControlFlow::Return() { builder_.CreateRetVoid(); }

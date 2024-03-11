@@ -108,16 +108,24 @@ class Integer : public BaseOps {
                 builder) {}
 
 public:
-  Integer(std::uint64_t value, llvm::IRBuilder<> &builder)
+  /// Initialize with a constant value.
+  Integer(auto value, llvm::IRBuilder<> &builder)
+      // disambiguate 0 int literal and nullptr
+    requires(std::is_integral_v<decltype(value)> &&
+             !std::is_same_v<decltype(NULL), decltype(value)>)
       : BaseOps(llvm::ConstantInt::get(builder.getContext(),
                                        llvm::APInt(64, value)),
                 builder) {}
 
+  /// Initialize with an input LLVM value (must be int..)
   Integer(llvm::Value *value, llvm::IRBuilder<> &builder)
-      : BaseOps(value, builder) {}
+      : BaseOps(value, builder) {
+        assert(value->getType()->isIntegerTy() && "Value must be an integer");
+      }
 
+  /// Initialize from another BaseOps object (must be int..)
   explicit Integer(const BaseOps &base) : BaseOps(base) {
-    assert(base.getType()->isIntegerTy());
+    assert(base.getType()->isIntegerTy() && "Value must be an integer");
   }
 
   /// arithmetic operators
