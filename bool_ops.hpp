@@ -74,18 +74,33 @@ public:
 
 namespace MyDSL {
 class Bool : public BaseOps {
-  Bool getConst(bool value) const {
+public:
+  using NativeType = bool;
+
+private:
+  Bool getConst(NativeType value) const {
     return {builder_.getInt1(value), builder_};
   }
 
+  /// Ref constructor.
+  Bool(llvm::Type *type, llvm::Value *value, llvm::IRBuilder<> &builder)
+      : BaseOps(type, value, builder) {}
+
+  template <class T> friend class Ref;
+
 public:
-  Bool(bool value, llvm::IRBuilder<> &builder)
+  Bool(NativeType value, llvm::IRBuilder<> &builder)
       : BaseOps(builder.getInt1(value), builder) {}
   Bool(llvm::Value *value, llvm::IRBuilder<> &builder)
       : BaseOps(value, builder) {}
 
   explicit Bool(const BaseOps &base) : BaseOps(base) {
     assert(base.getType()->isIntegerTy(1));
+  }
+
+  /// Get the type, that all Floats have in our DSL.
+  static llvm::Type *getType(llvm::LLVMContext &Ctx) {
+    return llvm::Type::getInt1Ty(Ctx);
   }
 
   // Logical operators
@@ -97,14 +112,14 @@ public:
   }
   Bool operator!() const { return {builder_.CreateNot(getValue()), builder_}; }
 
-  Bool operator&&(bool other) const {
-    return *this && getConst(other);
+  Bool operator&&(NativeType other) const { return *this && getConst(other); }
+  Bool operator||(NativeType other) const { return *this || getConst(other); }
+  friend Bool operator&&(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) && rhs;
   }
-  Bool operator||(bool other) const {
-    return *this || getConst(other);
+  friend Bool operator||(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) || rhs;
   }
-  friend Bool operator&&(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) && rhs; }
-  friend Bool operator||(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) || rhs; }
 
   // Relational operators
   Bool operator==(const Bool &other) const {
@@ -126,33 +141,30 @@ public:
     return {builder_.CreateICmpUGE(getValue(), other.getValue()), builder_};
   }
 
-  Bool operator==(bool other) const {
-    return *this == getConst(other);
+  Bool operator==(NativeType other) const { return *this == getConst(other); }
+  Bool operator!=(NativeType other) const { return *this != getConst(other); }
+  Bool operator<(NativeType other) const { return *this < getConst(other); }
+  Bool operator<=(NativeType other) const { return *this <= getConst(other); }
+  Bool operator>(NativeType other) const { return *this > getConst(other); }
+  Bool operator>=(NativeType other) const { return *this >= getConst(other); }
+  friend Bool operator==(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) == rhs;
   }
-  Bool operator!=(bool other) const {
-    return *this != getConst(other);
+  friend Bool operator!=(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) != rhs;
   }
-  Bool operator<(bool other) const {
-    return *this < getConst(other);
+  friend Bool operator<(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) < rhs;
   }
-  Bool operator<=(bool other) const {
-    return *this <= getConst(other);
+  friend Bool operator<=(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) <= rhs;
   }
-  Bool operator>(bool other) const {
-    return *this > getConst(other);
+  friend Bool operator>(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) > rhs;
   }
-  Bool operator>=(bool other) const {
-    return *this >= getConst(other);
+  friend Bool operator>=(NativeType lhs, const Bool &rhs) {
+    return rhs.getConst(lhs) >= rhs;
   }
-  friend Bool operator==(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) == rhs; }
-  friend Bool operator!=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) != rhs; }
-  friend Bool operator<(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) < rhs; }
-  friend Bool operator<=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) <= rhs; }
-  friend Bool operator>(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) > rhs; }
-  friend Bool operator>=(bool lhs, const Bool &rhs) { return rhs.getConst(lhs) >= rhs; }
-
-  // operator bool() const { return jit::evaluate<bool>(getValue()); }
-  // operator int() const { return jit::evaluate<int>(getValue()); }
 };
 
 #endif

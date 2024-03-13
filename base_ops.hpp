@@ -2,6 +2,7 @@
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
 
 namespace MyDSL {
 
@@ -13,13 +14,15 @@ namespace MyDSL {
 class BaseOps {
 protected:
   llvm::IRBuilder<> &builder_;
-  llvm::AllocaInst *mem_;
+  llvm::Value *ptr_;
+  llvm::Type *type_;
 
-  void store(llvm::Value *value) { builder_.CreateStore(value, mem_); }
+  void store(llvm::Value *value) { builder_.CreateStore(value, ptr_); }
 
-  llvm::Value *load() const {
-    return builder_.CreateLoad(mem_->getAllocatedType(), mem_);
-  }
+  llvm::Value *load() const { return builder_.CreateLoad(type_, ptr_); }
+
+  BaseOps(llvm::Type *type, llvm::Value *pointer, llvm::IRBuilder<> &builder)
+      : builder_(builder), ptr_(pointer), type_(type) {}
 
 public:
   /**
@@ -28,10 +31,11 @@ public:
    * @param value The initial value for the Alloca.
    * @param builder The builder to use for emitting operations.
    */
-  BaseOps(llvm::Value *value, llvm::IRBuilder<> &builder) : builder_(builder) {
+  BaseOps(llvm::Value *value, llvm::IRBuilder<> &builder)
+      : builder_(builder), type_(value->getType()) {
     auto &EntryBB = builder.GetInsertBlock()->getParent()->getEntryBlock();
 
-    mem_ =
+    ptr_ =
         llvm::IRBuilder<>{&EntryBB, EntryBB.getFirstInsertionPt()}.CreateAlloca(
             value->getType());
     if (!llvm::isa<llvm::UndefValue>(value))
@@ -62,8 +66,9 @@ public:
    *
    * @param other The other object to move the value from.
    */
-  BaseOps(BaseOps &&other) : builder_(other.builder_), mem_(other.mem_) {
-    other.mem_ = nullptr;
+  BaseOps(BaseOps &&other)
+      : builder_(other.builder_), ptr_(other.ptr_), type_(other.type_) {
+    other.ptr_ = nullptr;
   }
 
   /**
@@ -84,7 +89,7 @@ public:
    *
    * @return llvm::Type* The type.
    */
-  llvm::Type *getType() const { return mem_->getAllocatedType(); }
+  llvm::Type *getType() const { return type_; }
 
   /**
    * @brief Get the managed value.

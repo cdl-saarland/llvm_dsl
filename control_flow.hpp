@@ -17,7 +17,7 @@ class Float;
 class ControlFlow {
   llvm::IRBuilder<> &builder_;
 
-  BaseOps IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
+  BaseOps IfImpl(const Bool &Cond, const std::function<BaseOps()> &Then,
                  const std::function<BaseOps()> &Else = nullptr);
 
 public:
@@ -25,17 +25,17 @@ public:
 
   /**
    * @brief Emits an if-else statement.
-   * 
+   *
    * @param Cond A Boolean value that determines which branch to take.
    * @param Then A functor that generates the "then" branch.
    * @param Else A (optional) functor that generates the "else" branch.
    */
-  void If(Bool Cond, const std::function<void()> &Then,
+  void If(const Bool &Cond, const std::function<void()> &Then,
           const std::function<void()> &Else = nullptr);
 
   /**
    * @brief Emits an if-else statement, returning a value.
-   * 
+   *
    * @tparam RetT Type of the return value.
    * @param Cond A Boolean value that determines which branch to take.
    * @param Then A functor that generates the "then" branch.
@@ -43,7 +43,7 @@ public:
    * @return RetT A value that is the result of the selected branch.
    */
   template <class RetT>
-  RetT If(Bool Cond, const std::function<RetT()> &Then,
+  RetT If(const Bool &Cond, const std::function<RetT()> &Then,
           const std::function<RetT()> &Else = nullptr) {
     return static_cast<RetT>(IfImpl(
         Cond, [&]() -> BaseOps { return Then(); },
@@ -55,7 +55,7 @@ public:
    *
    * The loop will continue as long as \a Cond is true.
    * The loop body is defined by Body.
-   * 
+   *
    * @param Cond A functor that generates the loop exit condition.
    * @param Body A functor that generates the loop body.
    */
@@ -63,16 +63,20 @@ public:
              const std::function<void()> &Body);
 
   /**
-   * @brief Emits a for loop with an index starting at \a Start, incrementing by \a Step.
+   * @brief Emits a for loop with an index starting at \a Start, incrementing by
+   * \a Step.
    *
    * The loop will continue as long as \a Cond is true.
    * The loop body is defined by \a Body.
    * Both \a Cond and \a Body receive the current index as an argument.
-   * 
+   *
    * @param Start Integer value as start.
-   * @param Cond Functor that generates the loop exit condition. It receives the current loop index as value.
-   * @param Step Functor that generates the next loop index. It receives the current loop index as value and returns the new one.
-   * @param Body Functor that generates the loop body. It receives the current loop index as value.
+   * @param Cond Functor that generates the loop exit condition. It receives the
+   * current loop index as value.
+   * @param Step Functor that generates the next loop index. It receives the
+   * current loop index as value and returns the new one.
+   * @param Body Functor that generates the loop body. It receives the current
+   * loop index as value.
    */
   void For(const Integer &Start,
            const std::function<Bool(const Integer &)> &Cond,
@@ -82,9 +86,9 @@ public:
   // Emits a return statement.
   void Return();
   // Emits a return statement with a value.
-  void Return(Integer value);
-  void Return(Float value);
-  void Return(Bool value);
+  void Return(const Integer &value);
+  void Return(const Float &value);
+  void Return(const Bool &value);
 };
 
 } // namespace MyDSL

@@ -96,13 +96,23 @@ public:
 
 #else
 class Float : public BaseOps {
-  Float getConst(float value) const {
+public:
+  using NativeType = float;
+
+private:
+  Float getConst(NativeType value) const {
     return {llvm::ConstantFP::get(builder_.getContext(), llvm::APFloat(value)),
             builder_};
   }
 
+  /// Ref constructor.
+  Float(llvm::Type *type, llvm::Value *value, llvm::IRBuilder<> &builder)
+      : BaseOps(type, value, builder) {}
+
+  template <class T> friend class Ref;
+
 public:
-  Float(float value, llvm::IRBuilder<> &builder)
+  Float(NativeType value, llvm::IRBuilder<> &builder)
       : BaseOps(
             llvm::ConstantFP::get(builder.getContext(), llvm::APFloat(value)),
             builder) {}
@@ -111,6 +121,11 @@ public:
 
   explicit Float(const BaseOps &base) : BaseOps(base) {
     assert(base.getType()->isFloatTy());
+  }
+
+  /// Get the type, that all Floats have in our DSL.
+  static llvm::Type *getType(llvm::LLVMContext &Ctx) {
+    return llvm::Type::getFloatTy(Ctx);
   }
 
   /// arithmetic operators
@@ -126,12 +141,14 @@ public:
   Float operator/(const Float &other) const {
     return {builder_.CreateFDiv(getValue(), other.getValue()), builder_};
   }
-  Float operator-() const { return {builder_.CreateFNeg(getValue()), builder_}; }
+  Float operator-() const {
+    return {builder_.CreateFNeg(getValue()), builder_};
+  }
 
-  Float operator+(float f) const { return *this + getConst(f); }
-  Float operator-(float f) const { return *this - getConst(f); }
-  Float operator*(float f) const { return *this * getConst(f); }
-  Float operator/(float f) const { return *this / getConst(f); }
+  Float operator+(NativeType f) const { return *this + getConst(f); }
+  Float operator-(NativeType f) const { return *this - getConst(f); }
+  Float operator*(NativeType f) const { return *this * getConst(f); }
+  Float operator/(NativeType f) const { return *this / getConst(f); }
 
   /// relational operators
   Bool operator==(const Float &other) const {
@@ -153,12 +170,12 @@ public:
     return {builder_.CreateFCmpOGE(getValue(), other.getValue()), builder_};
   }
 
-  Bool operator==(float f) const { return *this == getConst(f); }
-  Bool operator!=(float f) const { return *this != getConst(f); }
-  Bool operator<(float f) const { return *this < getConst(f); }
-  Bool operator<=(float f) const { return *this <= getConst(f); }
-  Bool operator>(float f) const { return *this > getConst(f); }
-  Bool operator>=(float f) const { return *this >= getConst(f); }
+  Bool operator==(NativeType f) const { return *this == getConst(f); }
+  Bool operator!=(NativeType f) const { return *this != getConst(f); }
+  Bool operator<(NativeType f) const { return *this < getConst(f); }
+  Bool operator<=(NativeType f) const { return *this <= getConst(f); }
+  Bool operator>(NativeType f) const { return *this > getConst(f); }
+  Bool operator>=(NativeType f) const { return *this >= getConst(f); }
 
   /// compound assignment operators
   Float &operator+=(const Float &other) {
@@ -178,35 +195,32 @@ public:
     return *this;
   }
 
-  Float &operator+=(float f) { return *this += getConst(f); }
-  Float &operator-=(float f) { return *this -= getConst(f); }
-  Float &operator*=(float f) { return *this *= getConst(f); }
-  Float &operator/=(float f) { return *this /= getConst(f); }
-  
+  Float &operator+=(NativeType f) { return *this += getConst(f); }
+  Float &operator-=(NativeType f) { return *this -= getConst(f); }
+  Float &operator*=(NativeType f) { return *this *= getConst(f); }
+  Float &operator/=(NativeType f) { return *this /= getConst(f); }
+
   Float operator%(const Float &other) const {
     return {builder_.CreateFRem(getValue(), other.getValue()), builder_};
   }
-  
+
   Float &operator%=(const Float &other) {
     store(builder_.CreateFRem(getValue(), other.getValue()));
     return *this;
   }
 
-  Float &operator%= (float f) { return *this %= getConst(f); }
+  Float &operator%=(NativeType f) { return *this %= getConst(f); }
 
   Float operator^(const Float &other) const {
-    return {builder_.CreateCall(llvm::Intrinsic::getDeclaration(
-                                    builder_.GetInsertBlock()->getModule(),
-                                    llvm::Intrinsic::pow, {getValue()->getType()}),
-                                {getValue(), other.getValue()}),
-            builder_};
+    return {
+        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+                                builder_.GetInsertBlock()->getModule(),
+                                llvm::Intrinsic::pow, {getValue()->getType()}),
+                            {getValue(), other.getValue()}),
+        builder_};
   }
 
-  Float operator^(float f) const { return *this ^ getConst(f); }
-  
-  // operator float() const {
-  //   return jit::evaluate<float>(getValue());
-  // }
+  Float operator^(NativeType f) const { return *this ^ getConst(f); }
 
   explicit operator Integer() const;
 };

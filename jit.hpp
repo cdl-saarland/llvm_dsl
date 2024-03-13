@@ -18,6 +18,8 @@
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/Support/Error.h>
+#include <llvm/Target/TargetMachine.h>
 
 #include <memory>
 
@@ -35,6 +37,7 @@ private:
   llvm::orc::IRCompileLayer CompileLayer;
 
   llvm::orc::JITDylib &MainJD;
+  llvm::orc::JITTargetMachineBuilder JTMB;
 
   /// Use #Create to create a new instance.
   Jit(std::unique_ptr<llvm::orc::ExecutionSession> ES,
@@ -43,10 +46,9 @@ private:
         ObjectLayer(
             *this->ES,
             []() { return std::make_unique<llvm::SectionMemoryManager>(); }),
-        CompileLayer(
-            *this->ES, ObjectLayer,
-            std::make_unique<llvm::orc::ConcurrentIRCompiler>(std::move(JTMB))),
-        MainJD(this->ES->createBareJITDylib("<main>")) {
+        CompileLayer(*this->ES, ObjectLayer,
+                     std::make_unique<llvm::orc::ConcurrentIRCompiler>(JTMB)),
+        MainJD(this->ES->createBareJITDylib("<main>")), JTMB(std::move(JTMB)) {
     MainJD.addGenerator(
         cantFail(llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
             DL.getGlobalPrefix())));
@@ -70,8 +72,10 @@ public:
 
     auto ES = std::make_unique<llvm::orc::ExecutionSession>(std::move(*EPC));
 
-    llvm::orc::JITTargetMachineBuilder JTMB(
-        ES->getExecutorProcessControl().getTargetTriple());
+    auto JTMBC = llvm::orc::JITTargetMachineBuilder::detectHost();
+    if (!JTMBC)
+      return JTMBC.takeError();
+    auto JTMB = std::move(*JTMBC);
 
     auto DL = JTMB.getDefaultDataLayoutForTarget();
     if (!DL)
@@ -83,6 +87,11 @@ public:
 
   /// Returns the selected data layout.
   const llvm::DataLayout &getDataLayout() const { return DL; }
+
+  /// Returns the selected target machine.
+  llvm::Expected<std::unique_ptr<llvm::TargetMachine>> getTargetMachine() {
+    return JTMB.createTargetMachine();
+  }
 
   /// Returns a handle to the shared library containing the JITed code.
   llvm::orc::JITDylib &getMainJITDylib() { return MainJD; }

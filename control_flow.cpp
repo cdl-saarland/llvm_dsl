@@ -10,7 +10,7 @@
 
 namespace MyDSL {
 
-void ControlFlow::If(Bool Cond, const std::function<void()> &ThenTgt,
+void ControlFlow::If(const Bool &Cond, const std::function<void()> &ThenTgt,
                      const std::function<void()> &ElseTgt) {
   llvm::Function *F = builder_.GetInsertBlock()->getParent();
   llvm::BasicBlock *Then =
@@ -39,7 +39,8 @@ void ControlFlow::If(Bool Cond, const std::function<void()> &ThenTgt,
   builder_.SetInsertPoint(Merge);
 }
 
-BaseOps ControlFlow::IfImpl(Bool Cond, const std::function<BaseOps()> &Then,
+BaseOps ControlFlow::IfImpl(const Bool &Cond,
+                            const std::function<BaseOps()> &Then,
                             const std::function<BaseOps()> &Else) {
   llvm::Function *F = builder_.GetInsertBlock()->getParent();
   llvm::BasicBlock *ThenBB =
@@ -119,7 +120,7 @@ void ControlFlow::For(const Integer &Start,
 
 void ControlFlow::Return() { builder_.CreateRetVoid(); }
 
-void ControlFlow::Return(Float V) { builder_.CreateRet(V); }
-void ControlFlow::Return(Integer V) { builder_.CreateRet(V); }
-void ControlFlow::Return(Bool V) { builder_.CreateRet(V); }
+void ControlFlow::Return(const Float &V) { builder_.CreateRet(V); }
+void ControlFlow::Return(const Integer &V) { builder_.CreateRet(V); }
+void ControlFlow::Return(const Bool &V) { builder_.CreateRet(V); }
 } // namespace MyDSL

@@ -3,11 +3,11 @@
 #include "base_ops.hpp"
 #include <cmath>
 #include <cstdint>
-#include <llvm/IR/Constant.h>
 #include <ostream>
 
 #ifdef WITH_JIT
 #include <llvm/ADT/APInt.h>
+#include <llvm/IR/Constant.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
 #endif
@@ -99,13 +99,23 @@ public:
 
 #else
 class Integer : public BaseOps {
-  Integer getConst(std::size_t bits, std::uint64_t value) const {
+public:
+  using NativeType = std::uint64_t;
+
+private:
+  Integer getConst(std::size_t bits, NativeType value) const {
     return {builder_.getIntN(bits, value), builder_};
   }
-  Integer(std::size_t bits, std::uint64_t value, llvm::IRBuilder<> &builder)
+  Integer(std::size_t bits, NativeType value, llvm::IRBuilder<> &builder)
       : BaseOps(llvm::ConstantInt::get(builder.getContext(),
                                        llvm::APInt(bits, value)),
                 builder) {}
+
+  /// Ref constructor.
+  Integer(llvm::Type *type, llvm::Value *value, llvm::IRBuilder<> &builder)
+      : BaseOps(type, value, builder) {}
+
+  template <class T> friend class Ref;
 
 public:
   /// Initialize with a constant value.
@@ -120,12 +130,17 @@ public:
   /// Initialize with an input LLVM value (must be int..)
   Integer(llvm::Value *value, llvm::IRBuilder<> &builder)
       : BaseOps(value, builder) {
-        assert(value->getType()->isIntegerTy() && "Value must be an integer");
-      }
+    assert(value->getType()->isIntegerTy() && "Value must be an integer");
+  }
 
   /// Initialize from another BaseOps object (must be int..)
   explicit Integer(const BaseOps &base) : BaseOps(base) {
     assert(base.getType()->isIntegerTy() && "Value must be an integer");
+  }
+
+  /// Get the type, that all Integers have in our DSL.
+  static llvm::Type *getType(llvm::LLVMContext &Ctx) {
+    return llvm::IntegerType::get(Ctx, 64);
   }
 
   /// arithmetic operators
@@ -157,41 +172,41 @@ public:
         builder_};
   }
 
-  Integer operator+(std::uint64_t value) const {
+  Integer operator+(NativeType value) const {
     return *this + getConst(64, value);
   }
-  Integer operator-(std::uint64_t value) const {
+  Integer operator-(NativeType value) const {
     return *this - getConst(64, value);
   }
-  Integer operator*(std::uint64_t value) const {
+  Integer operator*(NativeType value) const {
     return *this * getConst(64, value);
   }
-  Integer operator/(std::uint64_t value) const {
+  Integer operator/(NativeType value) const {
     return *this / getConst(64, value);
   }
-  Integer operator%(std::uint64_t value) const {
+  Integer operator%(NativeType value) const {
     return *this % getConst(64, value);
   }
-  Integer operator^(std::uint64_t value) const {
+  Integer operator^(NativeType value) const {
     return *this ^ getConst(64, value);
   }
 
-  friend Integer operator+(std::uint64_t value, const Integer &other) {
+  friend Integer operator+(NativeType value, const Integer &other) {
     return other.getConst(64, value) + other;
   }
-  friend Integer operator-(std::uint64_t value, const Integer &other) {
+  friend Integer operator-(NativeType value, const Integer &other) {
     return other.getConst(64, value) - other;
   }
-  friend Integer operator*(std::uint64_t value, const Integer &other) {
+  friend Integer operator*(NativeType value, const Integer &other) {
     return other.getConst(64, value) * other;
   }
-  friend Integer operator/(std::uint64_t value, const Integer &other) {
+  friend Integer operator/(NativeType value, const Integer &other) {
     return other.getConst(64, value) / other;
   }
-  friend Integer operator%(std::uint64_t value, const Integer &other) {
+  friend Integer operator%(NativeType value, const Integer &other) {
     return other.getConst(64, value) % other;
   }
-  friend Integer operator^(std::uint64_t value, const Integer &other) {
+  friend Integer operator^(NativeType value, const Integer &other) {
     return other.getConst(64, value) ^ other;
   }
 
@@ -215,41 +230,37 @@ public:
     return {builder_.CreateICmpSGE(getValue(), other.getValue()), builder_};
   }
 
-  Bool operator==(std::uint64_t value) const {
+  Bool operator==(NativeType value) const {
     return *this == getConst(64, value);
   }
-  Bool operator!=(std::uint64_t value) const {
+  Bool operator!=(NativeType value) const {
     return *this != getConst(64, value);
   }
-  Bool operator<(std::uint64_t value) const {
-    return *this < getConst(64, value);
-  }
-  Bool operator<=(std::uint64_t value) const {
+  Bool operator<(NativeType value) const { return *this < getConst(64, value); }
+  Bool operator<=(NativeType value) const {
     return *this <= getConst(64, value);
   }
-  Bool operator>(std::uint64_t value) const {
-    return *this > getConst(64, value);
-  }
-  Bool operator>=(std::uint64_t value) const {
+  Bool operator>(NativeType value) const { return *this > getConst(64, value); }
+  Bool operator>=(NativeType value) const {
     return *this >= getConst(64, value);
   }
 
-  friend Bool operator==(std::uint64_t value, const Integer &other) {
+  friend Bool operator==(NativeType value, const Integer &other) {
     return other.getConst(64, value) == other;
   }
-  friend Bool operator!=(std::uint64_t value, const Integer &other) {
+  friend Bool operator!=(NativeType value, const Integer &other) {
     return other.getConst(64, value) != other;
   }
-  friend Bool operator<(std::uint64_t value, const Integer &other) {
+  friend Bool operator<(NativeType value, const Integer &other) {
     return other.getConst(64, value) < other;
   }
-  friend Bool operator<=(std::uint64_t value, const Integer &other) {
+  friend Bool operator<=(NativeType value, const Integer &other) {
     return other.getConst(64, value) <= other;
   }
-  friend Bool operator>(std::uint64_t value, const Integer &other) {
+  friend Bool operator>(NativeType value, const Integer &other) {
     return other.getConst(64, value) > other;
   }
-  friend Bool operator>=(std::uint64_t value, const Integer &other) {
+  friend Bool operator>=(NativeType value, const Integer &other) {
     return other.getConst(64, value) >= other;
   }
 
@@ -283,28 +294,12 @@ public:
     return *this;
   }
 
-  Integer &operator+=(std::uint64_t value) {
-    return *this += getConst(64, value);
-  }
-  Integer &operator-=(std::uint64_t value) {
-    return *this -= getConst(64, value);
-  }
-  Integer &operator*=(std::uint64_t value) {
-    return *this *= getConst(64, value);
-  }
-  Integer &operator/=(std::uint64_t value) {
-    return *this /= getConst(64, value);
-  }
-  Integer &operator%=(std::uint64_t value) {
-    return *this %= getConst(64, value);
-  }
-  Integer &operator^=(std::uint64_t value) {
-    return *this ^= getConst(64, value);
-  }
-
-  // operator std::uint64_t() const {
-  //   return jit::evaluate<std::uint64_t>(getValue());
-  // }
+  Integer &operator+=(NativeType value) { return *this += getConst(64, value); }
+  Integer &operator-=(NativeType value) { return *this -= getConst(64, value); }
+  Integer &operator*=(NativeType value) { return *this *= getConst(64, value); }
+  Integer &operator/=(NativeType value) { return *this /= getConst(64, value); }
+  Integer &operator%=(NativeType value) { return *this %= getConst(64, value); }
+  Integer &operator^=(NativeType value) { return *this ^= getConst(64, value); }
 
   explicit operator Float() const;
 };

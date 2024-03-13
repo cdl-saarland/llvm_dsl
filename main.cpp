@@ -2,9 +2,11 @@
 #include "float_ops.hpp"
 #include "int_ops.hpp"
 #include "jit.hpp"
+#include "tensor_ops.hpp"
 
 #include <iostream>
 #include <memory>
+#include <numeric>
 
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/BasicBlock.h>
@@ -25,26 +27,88 @@
 
 using namespace MyDSL;
 
-Float kernel(llvm::Value *A, llvm::Value *B, llvm::IRBuilder<> &Builder) {
-  Float a(A, Builder);
-  Float b(B, Builder);
+void kernel(llvm::Value *Tensor1, llvm::Value *Tensor2, llvm::Value *Size,
+            llvm::IRBuilder<> &Builder) {
 
   ControlFlow CF(Builder);
-  // return CF.If<Float>(
-  //     a < b,
-  //     [&]() {
-  //       a += b;
-  //       return static_cast<Float>(static_cast<Integer>(a + b) -
-  //                                 static_cast<Integer>(a + b));
-  //     },
-  //     [&]() { return (a + b) - (a + b); });
-  CF.While([&]() { return a < b; },
-                  [&]() {
-                    a += 1;
-                    b -= 1;
-                  });
-  return a + b + a;
+  Integer s(Size, Builder);
+  llvm::SmallVector<Integer, 2> size{s, s};
+  Tensor<Float, 2> T{size, Tensor1, Builder};
+  Tensor<Float, 2> T2{size, Tensor2, Builder};
+
+  T *= T2;
+  CF.Return(T[4][4]);
 }
+
+// void kernel(llvm::Value *A, llvm::Value *B, llvm::Value* S, llvm::IRBuilder<>
+// &Builder) {
+//   Float a(A, Builder);
+//   Float b(B, Builder);
+//   Integer s(S, Builder);
+
+//   ControlFlow CF(Builder);
+//   Tensor<Float, 2> T{{s, s}, Builder};
+//   Tensor<Float, 2> T2{{s, s}, Builder};
+//   CF.For(
+//       Integer{0, Builder}, [&](Integer i) { return i < s; },
+//       [&](Integer i) { return i + 1; },
+//       [&](Integer i) {
+//         CF.For(
+//             Integer{0, Builder}, [&](Integer j) { return j < s; },
+//             [&](Integer j) { return j + 1; },
+//             [&](Integer j) {
+//               T[i][j] = static_cast<Float>(i) + static_cast<Float>(j) + a;
+//             });
+//       });
+
+//   CF.For(
+//       Integer{0, Builder}, [&](Integer i) { return i < s; },
+//       [&](Integer i) { return i + 1; },
+//       [&](Integer i) {
+//         CF.For(
+//             Integer{0, Builder}, [&](Integer j) { return j < s; },
+//             [&](Integer j) { return j + 1; }, [&](Integer j) { T2[i][j] = b;
+//             });
+//       });
+
+//   // CF.For(
+//   //     Integer{0, Builder}, [&](Integer i) { return i < s; },
+//   //     [&](Integer i) { return i + 1; },
+//   //     [&](Integer i) {
+//   //       CF.For(
+//   //           Integer{0, Builder}, [&](Integer j) { return j < s; },
+//   //           [&](Integer j) { return j + 1; },
+//   //           [&](Integer j) { T[i][j] = T[i][j] * T2[i][j]; });
+//   //     });
+//   T /= b;
+//   CF.Return(T[4][4]);
+// }
+
+// void kernel(llvm::Value *A, llvm::Value *B, llvm::IRBuilder<> &Builder) {
+//   Float a(A, Builder);
+//   Float b(B, Builder);
+
+//   ControlFlow CF(Builder);
+//   // return CF.If<Float>(
+//   //     a < b,
+//   //     [&]() {
+//   //       a += b;
+//   //       return static_cast<Float>(static_cast<Integer>(a + b) -
+//   //                                 static_cast<Integer>(a + b));
+//   //     },
+//   //     [&]() { return (a + b) - (a + b); });
+//   // CF.While([&]() { return a < b; },
+//   //                 [&]() {
+//   //                   a += 1;
+//   //                   b -= 1;
+//   //                 });
+//   Integer i{0ull, Builder};
+//   CF.For(
+//       i, [&](Integer i) { return i < 10; }, [&](Integer i) { return i + 1; },
+//       [&](Integer i) { a += static_cast<Float>(i); });
+//   auto res = a + b + a;
+//   CF.Return(res);
+// }
 
 llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys) {
@@ -54,10 +118,15 @@ llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,
   return F;
 }
 
-void optimize(llvm::Module *M) {
+void optimize(llvm::Module &M, llvm::TargetMachine &TM) {
+  llvm::ExitOnError ExitOnErr;
+
   llvm::PipelineTuningOptions PTO;
   PTO.SLPVectorization = true;
-  llvm::PassBuilder PB(nullptr, PTO);
+  PTO.LoopVectorization = true;
+  PTO.LoopUnrolling = true;
+
+  llvm::PassBuilder PB(&TM, PTO);
 
   llvm::LoopAnalysisManager LAM;
   llvm::FunctionAnalysisManager FAM;
@@ -74,7 +143,7 @@ void optimize(llvm::Module *M) {
   // llvm::FunctionPassManager FPM;
   // FPM.addPass(llvm::PromotePass());
   // MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
-  MPM.run(*M, MAM);
+  MPM.run(M, MAM);
 }
 
 int main(int argc, const char *argv[]) {
@@ -88,9 +157,14 @@ int main(int argc, const char *argv[]) {
   auto &Ctx = *Context;
   auto M = std::make_unique<llvm::Module>("top", Ctx);
 
+  // auto Kernel =
+  //     make_kernel(M.get(), llvm::Type::getFloatTy(Ctx),
+  //                 {llvm::Type::getFloatTy(Ctx), llvm::Type::getFloatTy(Ctx),
+  //                  llvm::IntegerType::get(Ctx, 64)});
   auto Kernel =
-      make_kernel(M.get(), llvm::Type::getFloatTy(Ctx),
-                  {llvm::Type::getFloatTy(Ctx), llvm::Type::getFloatTy(Ctx)});
+      make_kernel(M.get(), Float::getType(Ctx),
+                  {Tensor<Float, 2>::getType(Ctx),
+                   Tensor<Float, 2>::getType(Ctx), Integer::getType(Ctx)});
   llvm::IRBuilder<> Builder(&Kernel->getEntryBlock());
 
   llvm::FastMathFlags FMF;
@@ -104,16 +178,14 @@ int main(int argc, const char *argv[]) {
 
   Builder.setFastMathFlags(FMF);
 
-  auto result = kernel(Kernel->getArg(0), Kernel->getArg(1), Builder);
-
-  Builder.CreateRet(result);
+  kernel(Kernel->getArg(0), Kernel->getArg(1), Kernel->getArg(2), Builder);
   llvm::errs() << *Kernel;
 
   auto JIT = ExitOnErr(Jit::Create());
 
   M->setDataLayout(JIT->getDataLayout());
 
-  optimize(M.get());
+  optimize(*M, *ExitOnErr(JIT->getTargetMachine()));
   llvm::errs() << "optimized:\n" << *Kernel;
 
   auto RT = JIT->getMainJITDylib().createResourceTracker();
@@ -122,8 +194,23 @@ int main(int argc, const char *argv[]) {
   ExitOnErr(JIT->addModule(std::move(TSM), RT));
   auto ExprSymbol = JIT->lookup("kernel").get();
 
-  float (*FP)(float, float) = (float (*)(float, float))ExprSymbol.getAddress();
-  fprintf(stderr, "Evaluated to %f\n", FP(2, 5));
+  // float (*FP)(float, float, std::uint64_t) =
+  //     (float (*)(float, float, std::uint64_t))ExprSymbol.getAddress();
+  // fprintf(stderr, "Evaluated to %f\n", FP(2, 5, 10ull));
+
+  const std::size_t size = 100;
+  std::vector<Float::NativeType> T1(size * size, 5);
+  std::vector<Float::NativeType> T2(size * size);
+  std::iota(T2.begin(), T2.end(), 0);
+
+  typename Float::NativeType (*FP)(typename Tensor<Float, 2>::NativeType,
+                                   typename Tensor<Float, 2>::NativeType,
+                                   typename Integer::NativeType) =
+      (typename Float::NativeType(*)(
+          typename Tensor<Float, 2>::NativeType,
+          typename Tensor<Float, 2>::NativeType,
+          typename Integer::NativeType))ExprSymbol.getAddress();
+  fprintf(stderr, "Evaluated to %f\n", FP(T1.data(), T2.data(), size));
 
   ExitOnErr(RT->remove());
 
