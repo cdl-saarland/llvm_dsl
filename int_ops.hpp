@@ -20,10 +20,10 @@ class Float;
 
 #ifndef WITH_JIT
 class Integer {
-  std::uint64_t value_;
+  std::int64_t value_;
 
 public:
-  Integer(std::uint64_t value) : value_(value) {}
+  Integer(std::int64_t value) : value_(value) {}
 
   Integer operator+(const Integer &other) const {
     return Integer(value_ + other.value_);
@@ -89,7 +89,7 @@ public:
     return Integer(pow(value_, other.value_));
   }
 
-  std::uint64_t getValue() const { return value_; }
+  std::int64_t getValue() const { return value_; }
 
   friend std::ostream &operator<<(std::ostream &os, const Integer &f) {
     os << f.value_;
@@ -100,7 +100,7 @@ public:
 #else
 class Integer : public BaseOps {
 public:
-  using NativeType = std::uint64_t;
+  using NativeType = std::int64_t;
 
 private:
   Integer getConst(std::size_t bits, NativeType value) const {
@@ -141,6 +141,18 @@ public:
   /// Get the type, that all Integers have in our DSL.
   static llvm::Type *getType(llvm::LLVMContext &Ctx) {
     return llvm::IntegerType::get(Ctx, 64);
+  }
+
+  /**
+   * @brief Assignment operator.
+   * Stores the native value as constant to the current alloca.
+   *
+   * @param other The native value to store.
+   * @return BaseOps& this.
+   */
+  BaseOps &operator=(NativeType other) {
+    store(getConst(64, other));
+    return *this;
   }
 
   /// arithmetic operators

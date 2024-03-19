@@ -128,6 +128,18 @@ public:
     return llvm::Type::getFloatTy(Ctx);
   }
 
+  /**
+   * @brief Assignment operator.
+   * Stores the native value as constant to the current alloca.
+   *
+   * @param other The native value to store.
+   * @return BaseOps& this.
+   */
+  BaseOps &operator=(NativeType other) {
+    store(getConst(other));
+    return *this;
+  }
+
   /// arithmetic operators
   Float operator+(const Float &other) const {
     return {builder_.CreateFAdd(getValue(), other.getValue()), builder_};

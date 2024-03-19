@@ -103,6 +103,18 @@ public:
     return llvm::Type::getInt1Ty(Ctx);
   }
 
+  /**
+   * @brief Assignment operator.
+   * Stores the native value as constant to the current alloca.
+   *
+   * @param other The native value to store.
+   * @return BaseOps& this.
+   */
+  BaseOps &operator=(NativeType other) {
+    store(getConst(other));
+    return *this;
+  }
+
   // Logical operators
   Bool operator&&(const Bool &other) const {
     return {builder_.CreateAnd(getValue(), other.getValue()), builder_};

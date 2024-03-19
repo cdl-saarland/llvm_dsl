@@ -114,4 +114,6 @@ public:
   }
 };
 
+bool linkBuiltinFunctions(llvm::Module &M);
+
 } // namespace MyDSL

@@ -82,6 +82,11 @@ public:
     return *this;
   }
 
+  Ref &operator=(T::NativeType other) {
+    *ptr_ = other;
+    return *this;
+  }
+
   // arithmetic operators
   T operator+(const T &other) const
     requires(Addable<T, T>)

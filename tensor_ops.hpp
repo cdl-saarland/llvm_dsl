@@ -6,10 +6,12 @@
 #include "ref.hpp"
 
 #include <algorithm>
+#include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Metadata.h>
 
 namespace MyDSL {
 
@@ -112,6 +114,9 @@ public:
   {
     return const_cast<Tensor<T, Dim> *>(this)->operator[](index);
   }
+
+  operator llvm::Value *() const { return data_; }
+
 #define NO_TENSOR_LIB
 #ifdef NO_TENSOR_LIB
 private:
@@ -234,8 +239,18 @@ public:
   Tensor<T, Dim> &operator*=(const Tensor<T, Dim> &other)
     requires(Multiplicable<T, T>)
   {
+#ifdef NO_TENSOR_OP_FUSION
     elementwiseOp(*this, other,
                   [](const auto &a, const auto &b) { return a * b; });
+#else
+    auto &M = *builder_.GetInsertBlock()->getModule();
+    auto FC = M.getOrInsertFunction(
+        "__mydsl_tensor_elementwise_mul_2_f32", builder_.getVoidTy(),
+        getType(M.getContext()), getType(M.getContext()),
+        getType(M.getContext()), Integer::getType(M.getContext()));
+
+    builder_.CreateCall(FC, {data_, data_, other.data_, size_[0]});
+#endif
     return *this;
   }
 
@@ -294,13 +309,21 @@ public:
                   [](const auto &a, const auto &b) { return a - b; });
     return *this;
   }
-#else
 
-  Tensor<T, Dim> operator*(const Tensor<T, Dim> &other) const
-    requires(Multiplicable<T, T>)
+  void conv2d(Tensor<T, Dim> &dest, const Tensor<T, Dim> &filter) const
+    requires(Multiplicable<T, T> && Addable<T, T> && Dim == 2)
   {
-    Tensor<T, Dim> result(size_, builder_);
-    // builder_.CreateCall();
+    // pre: size_[0] and size_[1] are equiv
+    //      filter.size_[0] and filter.size_[1] are equiv and odd
+
+    auto &M = *builder_.GetInsertBlock()->getModule();
+    auto FC = M.getOrInsertFunction(
+        "__mydsl_tensor_conv_2_f32", builder_.getVoidTy(), getType(M.getContext()),
+        getType(M.getContext()), getType(M.getContext()),
+        Integer::getType(M.getContext()), Integer::getType(M.getContext()));
+
+    builder_.CreateCall(
+        FC, {dest.data_, data_, filter.data_, size_[0], filter.size_[0]});
   }
 
 #endif
