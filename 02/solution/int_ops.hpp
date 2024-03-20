@@ -5,12 +5,10 @@
 #include <cstdint>
 #include <ostream>
 
-#ifdef WITH_JIT
 #include <llvm/ADT/APInt.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Support/raw_ostream.h>
-#endif
 
 #include "bool_ops.hpp"
 
