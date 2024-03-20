@@ -9,14 +9,8 @@
 
 using namespace MyDSL;
 Integer checksum(Integer i) {
-  // // todo: implement checksum algorithm..
-  // return i;
-    Integer sum = 0;
-  while (i > Integer(0)) {
-    sum += i % 10;
-    i /= 10;
-  }
-  return sum;
+  // todo: implement checksum algorithm..
+  return i;
 }
 
 int main(int argc, const char *argv[]) {
