@@ -59,21 +59,20 @@ public:
   }
 
   /// arithmetic operators
-  // todo: implement me
   Float operator+(const Float &other) const {
-    return {getValue(), builder_};
+    return {builder_.CreateFAdd(getValue(), other.getValue()), builder_};
   }
-  // todo: implement me
   Float operator-(const Float &other) const {
-    return {getValue(), builder_};
+    return {builder_.CreateFSub(getValue(), other.getValue()), builder_};
   }
-  // todo: implement me
   Float operator*(const Float &other) const {
-    return {getValue(), builder_};
+    return {builder_.CreateFMul(getValue(), other.getValue()), builder_};
   }
-  // todo: implement me
   Float operator/(const Float &other) const {
-    return {getValue(), builder_};
+    return {builder_.CreateFDiv(getValue(), other.getValue()), builder_};
+  }
+  Float operator-() const {
+    return {builder_.CreateFNeg(getValue()), builder_};
   }
 
   Float operator+(NativeType f) const { return *this + getConst(f); }
@@ -82,28 +81,20 @@ public:
   Float operator/(NativeType f) const { return *this / getConst(f); }
 
   /// compound assignment operators
-  // todo: implement me
   Float &operator+=(const Float &other) {
-    auto newValue = getValue();
-    store(newValue);
+    store(builder_.CreateFAdd(getValue(), other.getValue()));
     return *this;
   }
-  // todo: implement me
   Float &operator-=(const Float &other) {
-    auto newValue = getValue();
-    store(newValue);
+    store(builder_.CreateFSub(getValue(), other.getValue()));
     return *this;
   }
-  // todo: implement me
   Float &operator*=(const Float &other) {
-    auto newValue = getValue();
-    store(newValue);
+    store(builder_.CreateFMul(getValue(), other.getValue()));
     return *this;
   }
-  // todo: implement me
   Float &operator/=(const Float &other) {
-    auto newValue = getValue();
-    store(newValue);
+    store(builder_.CreateFDiv(getValue(), other.getValue()));
     return *this;
   }
 
@@ -123,11 +114,23 @@ public:
 
   Float operator^(NativeType f) const { return *this ^ getConst(f); }
 
-  // todo: implement me
-  Float sqrt() const { return {getValue(), builder_}; }
+  Float sqrt() const {
+    return {
+        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+                                builder_.GetInsertBlock()->getModule(),
+                                llvm::Intrinsic::sqrt, {getValue()->getType()}),
+                            {getValue()}),
+        builder_};
+  }
 
-  // todo: implement me
-  Float abs() const { return {getValue(), builder_}; }
+  Float abs() const {
+    return {
+        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+                                builder_.GetInsertBlock()->getModule(),
+                                llvm::Intrinsic::fabs, {getValue()->getType()}),
+                            {getValue()}),
+        builder_};
+  }
 
   explicit operator Integer() const;
 };

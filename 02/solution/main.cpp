@@ -21,9 +21,8 @@ Float kernel(llvm::Value *A, llvm::Value *B, llvm::Value *C,
   Float b(B, Builder);
   Float c(C, Builder);
 
-  // todo: implement me!
-
-  return a;
+  Float s = (a + b + c) / 2.0f;
+  return (s * (s - a) * (s - b) * (s - c)).abs().sqrt();
 }
 
 int main(int argc, const char *argv[]) {

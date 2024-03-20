@@ -7,18 +7,23 @@ include(AddLLVM)
 add_llvm_executable(YourDSL
   main.cpp
   jit.cpp
-  control_flow.cpp
   int_ops.cpp
   float_ops.cpp
-  passes/fuse_ops.cpp
-  passes/strip_nooptmd.cpp
 )
 set_property(TARGET YourDSL PROPERTY CXX_STANDARD 20)
 
 target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSL PUBLIC LLVM)
 
-# target_compile_options(YourDSL PRIVATE -fsanitize=undefined)
-# target_link_options(YourDSL PRIVATE -fsanitize=undefined)
+add_llvm_executable(YourDSLSol
+  solution/main.cpp
+  solution/jit.cpp
+  solution/int_ops.cpp
+  solution/float_ops.cpp
 
-add_subdirectory(lib)
+  PARTIAL_SOURCES_INTENDED
+)
+set_property(TARGET YourDSLSol PROPERTY CXX_STANDARD 20)
+
+target_include_directories(YourDSLSol PUBLIC ${LLVM_INCLUDE_DIR})
+target_link_libraries(YourDSLSol PUBLIC LLVM)
