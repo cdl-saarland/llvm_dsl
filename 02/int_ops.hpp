@@ -18,86 +18,6 @@ namespace MyDSL {
 
 class Float;
 
-#ifndef WITH_JIT
-class Integer {
-  std::int64_t value_;
-
-public:
-  Integer(std::int64_t value) : value_(value) {}
-
-  Integer operator+(const Integer &other) const {
-    return Integer(value_ + other.value_);
-  }
-  Integer operator-(const Integer &other) const {
-    return Integer(value_ - other.value_);
-  }
-  Integer operator*(const Integer &other) const {
-    return Integer(value_ * other.value_);
-  }
-  Integer operator/(const Integer &other) const {
-    return Integer(value_ / other.value_);
-  }
-  Integer operator-() const { return Integer(-value_); }
-  bool operator==(const Integer &other) const { return value_ == other.value_; }
-  bool operator!=(const Integer &other) const { return value_ != other.value_; }
-  bool operator<(const Integer &other) const { return value_ < other.value_; }
-  bool operator<=(const Integer &other) const { return value_ <= other.value_; }
-  bool operator>(const Integer &other) const { return value_ > other.value_; }
-  bool operator>=(const Integer &other) const { return value_ >= other.value_; }
-  Integer &operator+=(const Integer &other) {
-    value_ += other.value_;
-    return *this;
-  }
-  Integer &operator-=(const Integer &other) {
-    value_ -= other.value_;
-    return *this;
-  }
-  Integer &operator*=(const Integer &other) {
-    value_ *= other.value_;
-    return *this;
-  }
-  Integer &operator/=(const Integer &other) {
-    value_ /= other.value_;
-    return *this;
-  }
-  Integer &operator++() {
-    value_ += 1;
-    return *this;
-  }
-  Integer operator++(int) {
-    Integer temp = *this;
-    value_ += 1;
-    return temp;
-  }
-  Integer &operator--() {
-    value_ -= 1;
-    return *this;
-  }
-  Integer operator--(int) {
-    Integer temp = *this;
-    value_ -= 1;
-    return temp;
-  }
-  Integer operator%(const Integer &other) const {
-    return Integer(fmod(value_, other.value_));
-  }
-  Integer &operator%=(const Integer &other) {
-    value_ = fmod(value_, other.value_);
-    return *this;
-  }
-  Integer operator^(const Integer &other) const {
-    return Integer(pow(value_, other.value_));
-  }
-
-  std::int64_t getValue() const { return value_; }
-
-  friend std::ostream &operator<<(std::ostream &os, const Integer &f) {
-    os << f.value_;
-    return os;
-  }
-};
-
-#else
 class Integer : public BaseOps {
 public:
   using NativeType = std::int64_t;
@@ -315,5 +235,4 @@ public:
 
   explicit operator Float() const;
 };
-#endif
 } // namespace MyDSL

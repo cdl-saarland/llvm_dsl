@@ -5,6 +5,7 @@
 ### Prerequisites
 - LLVM 16
 - CMake
+- Ninja
 or
 - Docker
 - (optional) VS Code with Remote Container Extension
