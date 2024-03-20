@@ -1,4 +1,5 @@
 #include "jit.hpp"
+#include "passes/strip_nooptmd.hpp"
 
 #include <llvm/Bitcode/BitcodeReader.h>
 #include <llvm/IR/IRBuilder.h>
@@ -69,7 +70,7 @@ void optimize(llvm::Module &M, Jit &JIT) {
 
   // full optimization pipeline
   auto MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
- 
+
   // if instead readability is the main goal, just use the following:
   // llvm::ModulePassManager MPM;
   // llvm::FunctionPassManager FPM;
@@ -103,10 +104,11 @@ bool linkBitcode(llvm::Module &M, std::unique_ptr<llvm::Module> OtherM,
 
 bool linkBuiltinFunctions(llvm::Module &M) {
   llvm::ExitOnError ExitOnErr;
-  auto LibBufferE = llvm::MemoryBuffer::getFile("solution/lib/libbuiltin-host-full-sol.bc",
-                                                -1, false, true);
+  auto LibBufferE = llvm::MemoryBuffer::getFile(
+      "solution/lib/libbuiltin-host-full-sol.bc", -1, false, true);
   if (!LibBufferE) {
-    llvm::errs() << "Error loading libbuiltin-host-full.bc\n" << LibBufferE.getError().message() << "\n";
+    llvm::errs() << "Error loading libbuiltin-host-full.bc\n"
+                 << LibBufferE.getError().message() << "\n";
     return false;
   }
   auto LibBuffer = std::move(*LibBufferE);
@@ -119,6 +121,7 @@ bool linkBuiltinFunctions(llvm::Module &M) {
     }
     NewFunctionNames.push_back(F.getName().str());
   }
+  stripNoOptMetadata(*NewM);
 
   if (linkBitcode(M, std::move(NewM))) {
     // now set the linkage of the new functions to internal, so that they get
