@@ -6,7 +6,9 @@
 - LLVM 16
 - CMake
 - Ninja
+
 or
+
 - Docker
 - (optional) VS Code with Remote Container Extension
 
@@ -15,7 +17,7 @@ or
 We provide a docker image with an LLVM installation.
 While you can build and run your own LLVM stack locally, your mileage may vary.
 The docker image is a stable environment to experiment with the examples in this repository.
-To setup the docker image, first make sure that docker is installed and running on your system, then run `build_docker.sh` in the `docker/` folder.
+To set up the docker image, first make sure that docker is installed and running on your system, then run `build_docker.sh` in the `docker/` folder.
 
 Run `run_docker.sh` to enter the docker image.
 You are now inside the running docker container and can run the scripts inside the different exercise folders.
