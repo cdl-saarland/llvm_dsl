@@ -106,7 +106,7 @@ bool linkBuiltinFunctions(llvm::Module &M) {
   auto LibBufferE = llvm::MemoryBuffer::getFile("solution/lib/libbuiltin-host-full-sol.bc",
                                                 -1, false, true);
   if (!LibBufferE) {
-    llvm::errs() << "Error loading libbuiltin-host-full.bc\n";
+    llvm::errs() << "Error loading libbuiltin-host-full.bc\n" << LibBufferE.getError().message() << "\n";
     return false;
   }
   auto LibBuffer = std::move(*LibBufferE);

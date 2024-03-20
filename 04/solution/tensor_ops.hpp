@@ -117,8 +117,6 @@ public:
 
   operator llvm::Value *() const { return data_; }
 
-#define NO_TENSOR_LIB
-#ifdef NO_TENSOR_LIB
 private:
   template <class F>
   void elementwiseOp(Tensor<T, Dim> &dest, const Tensor<T, Dim> &other,
@@ -168,18 +166,8 @@ public:
     requires(Multiplicable<T, T>)
   {
     Tensor<T, Dim> result(size_, builder_);
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a * b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_mul_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {result.data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(result, other,
+                  [](const auto &a, const auto &b) { return a * b; });
     return result;
   }
 
@@ -196,18 +184,8 @@ public:
     requires(Divisible<T, T>)
   {
     Tensor<T, Dim> result(size_, builder_);
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a / b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_div_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {result.data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(result, other,
+                  [](const auto &a, const auto &b) { return a / b; });
     return result;
   }
 
@@ -224,18 +202,8 @@ public:
     requires(Addable<T, T>)
   {
     Tensor<T, Dim> result(size_, builder_);
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a + b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_add_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {result.data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(result, other,
+                  [](const auto &a, const auto &b) { return a + b; });
     return result;
   }
 
@@ -252,18 +220,8 @@ public:
     requires(Subtractable<T, T>)
   {
     Tensor<T, Dim> result(size_, builder_);
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a - b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_sub_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {result.data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(result, other,
+                  [](const auto &a, const auto &b) { return a - b; });
     return result;
   }
 
@@ -279,18 +237,8 @@ public:
   Tensor<T, Dim> &operator*=(const Tensor<T, Dim> &other)
     requires(Multiplicable<T, T>)
   {
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a * b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_mul_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(*this, other,
+                  [](const auto &a, const auto &b) { return a * b; });
     return *this;
   }
 
@@ -305,18 +253,8 @@ public:
   Tensor<T, Dim> &operator/=(const Tensor<T, Dim> &other)
     requires(Divisible<T, T>)
   {
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a / b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_div_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(*this, other,
+                  [](const auto &a, const auto &b) { return a / b; });
     return *this;
   }
 
@@ -331,18 +269,8 @@ public:
   Tensor<T, Dim> &operator+=(const Tensor<T, Dim> &other)
     requires(Addable<T, T>)
   {
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a + b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_add_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(*this, other,
+                  [](const auto &a, const auto &b) { return a + b; });
     return *this;
   }
 
@@ -357,18 +285,8 @@ public:
   Tensor<T, Dim> &operator-=(const Tensor<T, Dim> &other)
     requires(Subtractable<T, T>)
   {
-    if constexpr (Dim != 2 && !std::is_same_v<T, Float>) {
-      elementwiseOp(*this, other,
-                    [](const auto &a, const auto &b) { return a - b; });
-    } else {
-      auto &M = *builder_.GetInsertBlock()->getModule();
-      auto FC = M.getOrInsertFunction(
-          "__mydsl_tensor_elementwise_sub_2_f32", builder_.getVoidTy(),
-          getType(M.getContext()), getType(M.getContext()),
-          getType(M.getContext()), Integer::getType(M.getContext()));
-
-      builder_.CreateCall(FC, {data_, data_, other.data_, size_[0]});
-    }
+    elementwiseOp(*this, other,
+                  [](const auto &a, const auto &b) { return a - b; });
     return *this;
   }
 
@@ -380,24 +298,19 @@ public:
     return *this;
   }
 
-  void conv2d(Tensor<T, Dim> &dest, const Tensor<T, Dim> &filter) const
+  void mmul(Tensor<T,Dim>& dest, const Tensor<T, Dim> &other) const
     requires(Multiplicable<T, T> && Addable<T, T> && Dim == 2)
   {
     // pre: size_[0] and size_[1] are equiv
-    //      filter.size_[0] and filter.size_[1] are equiv and odd
 
     auto &M = *builder_.GetInsertBlock()->getModule();
+    auto &Ctx = M.getContext();
 
     auto FC = M.getOrInsertFunction(
-        "__mydsl_tensor_conv_2_f32", builder_.getVoidTy(),
-        getType(M.getContext()), getType(M.getContext()),
-        getType(M.getContext()), Integer::getType(M.getContext()),
-        Integer::getType(M.getContext()));
+        "__mydsl_tensor_mmul_2_f32", builder_.getVoidTy(), getType(Ctx),
+        getType(Ctx), getType(Ctx), Integer::getType(Ctx));
 
-    builder_.CreateCall(
-        FC, {dest.data_, data_, filter.data_, size_[0], filter.size_[0]});
+    builder_.CreateCall(FC, {dest.data_, data_, other.data_, size_[0]});
   }
-
-#endif
 };
 } // namespace MyDSL
