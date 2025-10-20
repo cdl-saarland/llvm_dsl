@@ -1,6 +1,6 @@
 SCRIPT_PATH=$(dirname $(realpath -s $0))
 
-DOCKER_IMG=fodinabor/llvm_workshop:dsl
+DOCKER_IMG=fodinabor/llvm_workshop:dsl20
 
 docker pull ${DOCKER_IMG}
 

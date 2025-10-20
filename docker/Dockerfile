@@ -1,4 +1,4 @@
-FROM silkeh/clang:16 as llvm_dsl
+FROM silkeh/clang:20 as llvm_dsl
 
 ## Global install
 RUN apt-get update -y && apt-get install -y \
