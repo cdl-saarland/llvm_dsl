@@ -7,8 +7,6 @@
 
 namespace MyDSL {
 
-class Float;
-
 class Integer {
   std::int64_t value_;
 

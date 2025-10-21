@@ -57,8 +57,8 @@ int main(int argc, const char *argv[]) {
   llvm::errs() << "optimized:\n" << *Kernel;
   dumpModule(*M, "kernel.ll");
 
-  float (*FP)(float, float, float) = (float (*)(float, float, float))ExitOnErr(
-      JIT(std::move(M), std::move(Context)));
+  float (*FP)(float, float, float) = ExitOnErr(
+      JIT(std::move(M), std::move(Context))).toPtr<float(float, float, float)>();
 
   std::cout << "Evaluated to " << FP(A, B, C) << std::endl;
 

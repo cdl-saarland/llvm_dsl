@@ -91,11 +91,11 @@ int main(int argc, const char *argv[]) {
              typename Tensor<Float, 2>::NativeType,
              typename Tensor<Float, 2>::NativeType,
              typename Integer::NativeType) =
-      (void (*)(typename Tensor<Float, 2>::NativeType,
-                typename Tensor<Float, 2>::NativeType,
-                typename Tensor<Float, 2>::NativeType,
-                typename Integer::NativeType))
-          ExitOnErr(JIT(std::move(M), std::move(Context)));
+      ExitOnErr(JIT(std::move(M), std::move(Context)))
+          .toPtr<void(typename Tensor<Float, 2>::NativeType,
+                      typename Tensor<Float, 2>::NativeType,
+                      typename Tensor<Float, 2>::NativeType,
+                      typename Integer::NativeType)>();
 
   FP(Result.data(), T1.data(), T2.data(), size);
 

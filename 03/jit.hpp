@@ -15,6 +15,7 @@
 #include <llvm/ExecutionEngine/Orc/IRCompileLayer.h>
 #include <llvm/ExecutionEngine/Orc/JITTargetMachineBuilder.h>
 #include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
+#include <llvm/ExecutionEngine/Orc/Shared/ExecutorAddress.h>
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/IR/LLVMContext.h>
@@ -113,12 +114,12 @@ public:
   /// Looks up a symbol in the JITed shared library.
   /// Use ->getAddress() to get the address, then cast the address to the
   /// function pointer type to use it.
-  llvm::Expected<llvm::JITEvaluatedSymbol> lookup(llvm::StringRef Name) {
+  llvm::Expected<llvm::orc::ExecutorSymbolDef> lookup(llvm::StringRef Name) {
     return ES->lookup({&MainJD}, Mangle(Name.str()));
   }
 
   /// JIT compiles the code and returns the address of the kernel function.
-  llvm::Expected<unsigned long>
+  llvm::Expected<llvm::orc::ExecutorAddr>
   operator()(std::unique_ptr<llvm::Module> M,
              std::unique_ptr<llvm::LLVMContext> Ctx,
              llvm::StringRef KernelName = "kernel") {

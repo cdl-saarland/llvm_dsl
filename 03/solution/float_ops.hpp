@@ -143,7 +143,7 @@ public:
 
   Float operator^(const Float &other) const {
     return {
-        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+        builder_.CreateCall(llvm::Intrinsic::getOrInsertDeclaration(
                                 builder_.GetInsertBlock()->getModule(),
                                 llvm::Intrinsic::pow, {getValue()->getType()}),
                             {getValue(), other.getValue()}),

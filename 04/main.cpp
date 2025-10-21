@@ -82,10 +82,10 @@ int main(int argc, const char *argv[]) {
   void (*FP)(typename Tensor<Float, 2>::NativeType,
              typename Tensor<Float, 2>::NativeType,
              typename Tensor<Float, 2>::NativeType, IntT, FloatT, FloatT) =
-      (void (*)(typename Tensor<Float, 2>::NativeType,
+      ExitOnErr(JIT(std::move(M), std::move(Context))).toPtr<void (typename Tensor<Float, 2>::NativeType,
                 typename Tensor<Float, 2>::NativeType,
                 typename Tensor<Float, 2>::NativeType, IntT, FloatT,
-                FloatT))ExitOnErr(JIT(std::move(M), std::move(Context)));
+                FloatT)>();
 
   FP(Dest.data(), T1.data(), T2.data(), Size, A, B);
 

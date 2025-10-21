@@ -14,7 +14,7 @@ namespace {
 llvm::CallInst *isElementwiseOp(llvm::Value &V) {
   if (auto *CI = llvm::dyn_cast<llvm::CallInst>(&V)) {
     if (auto *F = CI->getCalledFunction()) {
-      if (F->getName().startswith("__mydsl_tensor_elementwise"))
+      if (F->getName().starts_with("__mydsl_tensor_elementwise"))
         return CI;
     }
   }
@@ -24,7 +24,7 @@ llvm::CallInst *isElementwiseOp(llvm::Value &V) {
 llvm::CallInst *isConvolutionOp(llvm::Value &V) {
   if (auto *CI = llvm::dyn_cast<llvm::CallInst>(&V)) {
     if (auto *F = CI->getCalledFunction()) {
-      if (F->getName().startswith("__mydsl_tensor_conv_2_f"))
+      if (F->getName().starts_with("__mydsl_tensor_conv_2_f"))
         return CI;
     }
   }
@@ -34,7 +34,7 @@ llvm::CallInst *isConvolutionOp(llvm::Value &V) {
 llvm::CallInst *isTensorOp(llvm::Value &V) {
   if (auto *CI = llvm::dyn_cast<llvm::CallInst>(&V)) {
     if (auto *F = CI->getCalledFunction()) {
-      if (F->getName().startswith("__mydsl_tensor"))
+      if (F->getName().starts_with("__mydsl_tensor"))
         return CI;
     }
   }

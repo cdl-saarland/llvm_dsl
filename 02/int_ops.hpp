@@ -3,6 +3,7 @@
 #include "base_ops.hpp"
 #include <cmath>
 #include <cstdint>
+#include <llvm/IR/Intrinsics.h>
 #include <ostream>
 
 #include <llvm/ADT/APInt.h>
@@ -210,7 +211,7 @@ public:
 
   Integer abs() const {
     return {
-        builder_.CreateCall(llvm::Intrinsic::getDeclaration(
+        builder_.CreateCall(llvm::Intrinsic::getOrInsertDeclaration(
                                 builder_.GetInsertBlock()->getModule(),
                                 llvm::Intrinsic::abs, {getValue()->getType()}),
                             {getValue(), builder_.getFalse()}),

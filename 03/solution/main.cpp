@@ -18,8 +18,7 @@ using namespace MyDSL;
 using FloatT = Float::NativeType;
 using IntT = Integer::NativeType;
 
-FloatT dot_product(FloatT a, FloatT b,
-                              const std::size_t size) {
+FloatT dot_product(FloatT a, FloatT b, const std::size_t size) {
   std::vector<FloatT> A(size, a);
   std::vector<FloatT> B(size, b);
   IntT i = 0;
@@ -94,8 +93,9 @@ int main(int argc, const char *argv[]) {
   llvm::errs() << "optimized:\n" << *Kernel;
   dumpModule(*M, "kernel.ll");
 
-  FloatT (*FP)(FloatT, FloatT, IntT) = (FloatT(*)(
-      FloatT, FloatT, IntT))ExitOnErr(JIT(std::move(M), std::move(Context)));
+  FloatT (*FP)(FloatT, FloatT, IntT) =
+      ExitOnErr(JIT(std::move(M), std::move(Context)))
+          .toPtr<FloatT (*)(FloatT, FloatT, IntT)>();
 
   std::cout << "Evaluated to " << FP(A, B, Size) << " reference "
             << dot_product(A, B, Size) << std::endl;
