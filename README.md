@@ -3,7 +3,7 @@
 ## Getting started
 
 ### Prerequisites
-- LLVM 16
+- LLVM 20
 - CMake
 - Ninja
 

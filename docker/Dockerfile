@@ -7,7 +7,7 @@ RUN apt-get update -y && apt-get install -y \
 # Environment configuration
 ENV CC=/usr/bin/clang \
     CXX=/usr/bin/clang++ \
-    CMAKE_PREFIX_PATH=/usr/lib/llvm-16/cmake \
+    CMAKE_PREFIX_PATH=/usr/lib/llvm-20/cmake \
     CLANGXX=/usr/bin/clang++ \
     CLANG=/usr/bin/clang \
     OPT=/usr/bin/opt
