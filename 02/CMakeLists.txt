@@ -1,14 +1,15 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(YourDSL)
 find_package(LLVM REQUIRED)
 include(AddLLVM)
 
 add_llvm_executable(YourDSL
-  main.cpp
-  jit.cpp
+  generate_kernel.cpp
   int_ops.cpp
   float_ops.cpp
+
+  PARTIAL_SOURCES_INTENDED
 )
 set_property(TARGET YourDSL PROPERTY CXX_STANDARD 20)
 
@@ -16,8 +17,7 @@ target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSL PUBLIC LLVM)
 
 add_llvm_executable(YourDSLSol
-  solution/main.cpp
-  solution/jit.cpp
+  solution/generate_kernel.cpp
   solution/int_ops.cpp
   solution/float_ops.cpp
 

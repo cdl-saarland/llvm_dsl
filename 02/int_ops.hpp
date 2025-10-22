@@ -3,7 +3,6 @@
 #include "base_ops.hpp"
 #include <cmath>
 #include <cstdint>
-#include <llvm/IR/Intrinsics.h>
 #include <ostream>
 
 #include <llvm/ADT/APInt.h>
