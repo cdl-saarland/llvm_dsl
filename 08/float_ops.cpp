@@ -7,10 +7,11 @@
 #include <llvm/IR/Module.h>
 
 namespace MyDSL {
-Float::operator Integer() const {
+Integer Float::toInteger() const {
   return {builder_.CreateFPToSI(getValue(),
                                 llvm::Type::getInt64Ty(builder_.getContext())),
           builder_};
 }
+Float::operator Integer() const { return toInteger(); }
 
 } // namespace MyDSL

@@ -217,6 +217,7 @@ public:
         builder_};
   }
 
+  Float toFloat() const;
   explicit operator Float() const;
 };
 } // namespace MyDSL

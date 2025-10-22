@@ -152,6 +152,7 @@ public:
 
   Float operator^(NativeType f) const { return *this ^ getConst(f); }
 
+  Integer toInteger() const;
   explicit operator Integer() const;
 };
 

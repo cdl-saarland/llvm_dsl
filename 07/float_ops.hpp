@@ -152,7 +152,7 @@ public:
 
   Float operator^(NativeType f) const { return *this ^ getConst(f); }
 
-  explicit operator Integer() const;
-};
+  Integer toInteger() const;
+  explicit operator Integer() const;};
 
 } // namespace MyDSL

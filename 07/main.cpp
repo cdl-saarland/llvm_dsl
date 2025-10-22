@@ -51,8 +51,8 @@ void kernel(llvm::Value *A, llvm::Value *B, llvm::Value *Size,
       Integer{0, Builder}, [&](Integer i) { return i < size; },
       [&](Integer i) { return i + 1; },
       [&](Integer i) {
-        ArrayA[i] = static_cast<Float>(i) + a;
-        ArrayB[i] = static_cast<Float>(size - i) + b;
+        ArrayA[i] = i.toFloat() + a;
+        ArrayB[i] = (size - i).toFloat() + b;
       });
 
   // todo: implement dot product

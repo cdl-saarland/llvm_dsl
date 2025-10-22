@@ -7,10 +7,12 @@
 #include <llvm/IR/Module.h>
 
 namespace MyDSL {
-Integer::operator Float() const {
+Float Integer::toFloat() const {
   return {builder_.CreateSIToFP(getValue(),
                                 llvm::Type::getFloatTy(builder_.getContext())),
           builder_};
 }
+
+Integer::operator Float() const { return toFloat(); }
 
 } // namespace MyDSL
