@@ -5,9 +5,10 @@ find_package(LLVM REQUIRED)
 include(AddLLVM)
 
 add_llvm_executable(YourDSL
-  generate_kernel.cpp
+  main.cpp
   int_ops.cpp
   float_ops.cpp
+  clangjit.cpp
 
   PARTIAL_SOURCES_INTENDED
 )
@@ -17,9 +18,10 @@ target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSL PUBLIC LLVM)
 
 add_llvm_executable(YourDSLSol
-  solution/generate_kernel.cpp
+  solution/main.cpp
   solution/int_ops.cpp
   solution/float_ops.cpp
+  solution/clangjit.cpp
 
   PARTIAL_SOURCES_INTENDED
 )
