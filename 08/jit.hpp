@@ -140,7 +140,7 @@ std::tuple<std::unique_ptr<llvm::LLVMContext>, std::unique_ptr<llvm::Module>,
 initialize();
 
 // Create a kernel function.
-llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,
+llvm::Function *make_kernel_function(llvm::Module *M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys);
 
 // Optimize the module.

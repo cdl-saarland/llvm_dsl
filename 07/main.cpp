@@ -76,7 +76,7 @@ int main(int argc, const char *argv[]) {
   auto &JIT = *JITP;
   auto &Ctx = *Context;
 
-  auto Kernel = make_kernel(
+  auto Kernel = make_kernel_function(
       M.get(), Float::getType(Ctx),
       {Float::getType(Ctx), Float::getType(Ctx), Integer::getType(Ctx)});
 

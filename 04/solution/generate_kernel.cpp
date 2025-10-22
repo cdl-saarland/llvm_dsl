@@ -14,7 +14,7 @@
 using namespace MyDSL;
 
 void dumpModule(llvm::Module &M, llvm::StringRef Filename);
-llvm::Function *make_kernel(llvm::Module &M, llvm::Type *RetTy,
+llvm::Function *make_kernel_function(llvm::Module &M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys);
 
 Float kernel(llvm::Value *A, llvm::Value *B, llvm::Value *C,
@@ -34,7 +34,7 @@ int main(int argc, const char *argv[]) {
   auto &Ctx = *Context;
   auto M = std::make_unique<llvm::Module>("top", Ctx);
 
-  auto Kernel = make_kernel(
+  auto Kernel = make_kernel_function(
       *M.get(), Float::getType(Ctx),
       {Float::getType(Ctx), Float::getType(Ctx), Float::getType(Ctx)});
 
@@ -50,7 +50,7 @@ int main(int argc, const char *argv[]) {
   return 0;
 }
 
-llvm::Function *make_kernel(llvm::Module &M, llvm::Type *RetTy,
+llvm::Function *make_kernel_function(llvm::Module &M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys) {
   auto *F = llvm::cast<llvm::Function>(
       M.getOrInsertFunction("kernel", RetTy, ArgTys).getCallee());

@@ -47,7 +47,7 @@ int main(int argc, const char *argv[]) {
   auto &JIT = *JITP;
   auto &Ctx = *Context;
 
-  auto Kernel = make_kernel(
+  auto Kernel = make_kernel_function(
       M.get(), llvm::Type::getVoidTy(Ctx),
       {Tensor<Float, 2>::getType(Ctx), Tensor<Float, 2>::getType(Ctx),
        Tensor<Float, 2>::getType(Ctx), Integer::getType(Ctx),

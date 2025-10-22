@@ -35,7 +35,7 @@ initialize() {
   return {std::move(Context), std::move(M), std::move(JIT)};
 }
 
-llvm::Function *make_kernel(llvm::Module *M, llvm::Type *RetTy,
+llvm::Function *make_kernel_function(llvm::Module *M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys) {
   auto *F = llvm::cast<llvm::Function>(
       M->getOrInsertFunction("kernel", RetTy, ArgTys).getCallee());
