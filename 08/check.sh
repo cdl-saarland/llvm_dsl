@@ -6,13 +6,13 @@ mkdir -p $SCRIPT_PATH/build && cd $SCRIPT_PATH/build
 cmake .. -G Ninja
 ninja
 
-./YourDSL 15 > YourDSL.out
-./YourDSL 123 >> YourDSL.out
-./YourDSL 5678 >> YourDSL.out
+./YourDSL 2.4 5.1 10 > YourDSL.out
+./YourDSL 2.7 1.1 15 >> YourDSL.out
+./YourDSL 28.4 7.5 100 >> YourDSL.out
 
-./YourDSLSol 15 > YourDSLSol.out
-./YourDSLSol 123 >> YourDSLSol.out
-./YourDSLSol 5678 >> YourDSLSol.out
+./YourDSLSol 2.4 5.1 10 > YourDSLSol.out
+./YourDSLSol 2.7 1.1 15 >> YourDSLSol.out
+./YourDSLSol 28.4 7.5 100 >> YourDSLSol.out
 
 if [[ $(cmp YourDSL.out YourDSLSol.out) ]]; then
   echo "YourDSL.out and YourDSLSol.out differ"

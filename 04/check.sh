@@ -6,13 +6,23 @@ mkdir -p $SCRIPT_PATH/build && cd $SCRIPT_PATH/build
 cmake .. -G Ninja
 ninja
 
-./YourDSL 2.4 5.1 10 > YourDSL.out
-./YourDSL 2.7 1.1 15 >> YourDSL.out
-./YourDSL 28.4 7.5 100 >> YourDSL.out
+# generates kernel.ll
+./YourDSL
 
-./YourDSLSol 2.4 5.1 10 > YourDSLSol.out
-./YourDSLSol 2.7 1.1 15 >> YourDSLSol.out
-./YourDSLSol 28.4 7.5 100 >> YourDSLSol.out
+clang++ -O3 ../main.cpp kernel.ll -o run
+
+./run 15 35 10 > YourDSL.out
+./run 2 2 1 >> YourDSL.out
+./run 100 12 35 >> YourDSL.out
+
+# generates kernelsol.ll
+./YourDSLSol
+
+clang++ -O3 ../solution/main.cpp kernelsol.ll -o runSol
+
+./runSol 15 35 10 > YourDSLSol.out
+./runSol 2 2 1 >> YourDSLSol.out
+./runSol 100 12 35 >> YourDSLSol.out
 
 if [[ $(cmp YourDSL.out YourDSLSol.out) ]]; then
   echo "YourDSL.out and YourDSLSol.out differ"

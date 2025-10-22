@@ -6,16 +6,17 @@ mkdir -p $SCRIPT_PATH/build && cd $SCRIPT_PATH/build
 cmake .. -G Ninja
 ninja
 
-./YourDSL 15 > YourDSL.out
-./YourDSL 123 >> YourDSL.out
-./YourDSL 5678 >> YourDSL.out
+./YourDSL > YourDSL.out 2> YourDSL.err
 
-./YourDSLSol 15 > YourDSLSol.out
-./YourDSLSol 123 >> YourDSLSol.out
-./YourDSLSol 5678 >> YourDSLSol.out
+./YourDSLSol > YourDSLSol.out
 
 if [[ $(cmp YourDSL.out YourDSLSol.out) ]]; then
   echo "YourDSL.out and YourDSLSol.out differ"
   exit 1
 fi
 echo "YourDSL.out and YourDSLSol.out are the same"
+
+grep "__mydsl_fused_tensor_elementwise_mul_conv_2_f32" YourDSL.err > /dev/null
+if [[ $? -ne 0 ]]; then
+    echo "There's no __mydsl_fused_tensor_elementwise_mul_conv_2_f32 used!"
+fi

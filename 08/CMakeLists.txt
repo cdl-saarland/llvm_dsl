@@ -1,23 +1,28 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(YourDSL)
 find_package(LLVM REQUIRED)
 include(AddLLVM)
 
 add_llvm_executable(YourDSL
-  generate_kernel.cpp
+  main.cpp
+  jit.cpp
+  control_flow.cpp
   int_ops.cpp
   float_ops.cpp
-
-  PARTIAL_SOURCES_INTENDED
 )
 set_property(TARGET YourDSL PROPERTY CXX_STANDARD 20)
 
 target_include_directories(YourDSL PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSL PUBLIC LLVM)
 
+add_subdirectory(lib)
+
+
 add_llvm_executable(YourDSLSol
-  solution/generate_kernel.cpp
+  solution/main.cpp
+  solution/jit.cpp
+  solution/control_flow.cpp
   solution/int_ops.cpp
   solution/float_ops.cpp
 
@@ -27,3 +32,5 @@ set_property(TARGET YourDSLSol PROPERTY CXX_STANDARD 20)
 
 target_include_directories(YourDSLSol PUBLIC ${LLVM_INCLUDE_DIR})
 target_link_libraries(YourDSLSol PUBLIC LLVM)
+
+add_subdirectory(solution/lib)

@@ -59,20 +59,21 @@ public:
   }
 
   /// arithmetic operators
+  // todo: implement me
   Float operator+(const Float &other) const {
-    return {builder_.CreateFAdd(getValue(), other.getValue()), builder_};
+    return {getValue(), builder_};
   }
+  // todo: implement me
   Float operator-(const Float &other) const {
-    return {builder_.CreateFSub(getValue(), other.getValue()), builder_};
+    return {getValue(), builder_};
   }
+  // todo: implement me
   Float operator*(const Float &other) const {
-    return {builder_.CreateFMul(getValue(), other.getValue()), builder_};
+    return {getValue(), builder_};
   }
+  // todo: implement me
   Float operator/(const Float &other) const {
-    return {builder_.CreateFDiv(getValue(), other.getValue()), builder_};
-  }
-  Float operator-() const {
-    return {builder_.CreateFNeg(getValue()), builder_};
+    return {getValue(), builder_};
   }
 
   Float operator+(NativeType f) const { return *this + getConst(f); }
@@ -80,48 +81,29 @@ public:
   Float operator*(NativeType f) const { return *this * getConst(f); }
   Float operator/(NativeType f) const { return *this / getConst(f); }
 
-  /// relational operators
-  Bool operator==(const Float &other) const {
-    return {builder_.CreateFCmpOEQ(getValue(), other.getValue()), builder_};
-  }
-  Bool operator!=(const Float &other) const {
-    return {builder_.CreateFCmpONE(getValue(), other.getValue()), builder_};
-  }
-  Bool operator<(const Float &other) const {
-    return {builder_.CreateFCmpOLT(getValue(), other.getValue()), builder_};
-  }
-  Bool operator<=(const Float &other) const {
-    return {builder_.CreateFCmpOLE(getValue(), other.getValue()), builder_};
-  }
-  Bool operator>(const Float &other) const {
-    return {builder_.CreateFCmpOGT(getValue(), other.getValue()), builder_};
-  }
-  Bool operator>=(const Float &other) const {
-    return {builder_.CreateFCmpOGE(getValue(), other.getValue()), builder_};
-  }
-
-  Bool operator==(NativeType f) const { return *this == getConst(f); }
-  Bool operator!=(NativeType f) const { return *this != getConst(f); }
-  Bool operator<(NativeType f) const { return *this < getConst(f); }
-  Bool operator<=(NativeType f) const { return *this <= getConst(f); }
-  Bool operator>(NativeType f) const { return *this > getConst(f); }
-  Bool operator>=(NativeType f) const { return *this >= getConst(f); }
-
   /// compound assignment operators
+  // todo: implement me
   Float &operator+=(const Float &other) {
-    store(builder_.CreateFAdd(getValue(), other.getValue()));
+    auto newValue = getValue();
+    store(newValue);
     return *this;
   }
+  // todo: implement me
   Float &operator-=(const Float &other) {
-    store(builder_.CreateFSub(getValue(), other.getValue()));
+    auto newValue = getValue();
+    store(newValue);
     return *this;
   }
+  // todo: implement me
   Float &operator*=(const Float &other) {
-    store(builder_.CreateFMul(getValue(), other.getValue()));
+    auto newValue = getValue();
+    store(newValue);
     return *this;
   }
+  // todo: implement me
   Float &operator/=(const Float &other) {
-    store(builder_.CreateFDiv(getValue(), other.getValue()));
+    auto newValue = getValue();
+    store(newValue);
     return *this;
   }
 
@@ -129,17 +111,6 @@ public:
   Float &operator-=(NativeType f) { return *this -= getConst(f); }
   Float &operator*=(NativeType f) { return *this *= getConst(f); }
   Float &operator/=(NativeType f) { return *this /= getConst(f); }
-
-  Float operator%(const Float &other) const {
-    return {builder_.CreateFRem(getValue(), other.getValue()), builder_};
-  }
-
-  Float &operator%=(const Float &other) {
-    store(builder_.CreateFRem(getValue(), other.getValue()));
-    return *this;
-  }
-
-  Float &operator%=(NativeType f) { return *this %= getConst(f); }
 
   Float operator^(const Float &other) const {
     return {
@@ -151,6 +122,12 @@ public:
   }
 
   Float operator^(NativeType f) const { return *this ^ getConst(f); }
+
+  // todo: implement me
+  Float sqrt() const { return {getValue(), builder_}; }
+
+  // todo: implement me
+  Float abs() const { return {getValue(), builder_}; }
 
   explicit operator Integer() const;
 };

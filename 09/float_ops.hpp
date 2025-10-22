@@ -80,6 +80,33 @@ public:
   Float operator*(NativeType f) const { return *this * getConst(f); }
   Float operator/(NativeType f) const { return *this / getConst(f); }
 
+  /// relational operators
+  Bool operator==(const Float &other) const {
+    return {builder_.CreateFCmpOEQ(getValue(), other.getValue()), builder_};
+  }
+  Bool operator!=(const Float &other) const {
+    return {builder_.CreateFCmpONE(getValue(), other.getValue()), builder_};
+  }
+  Bool operator<(const Float &other) const {
+    return {builder_.CreateFCmpOLT(getValue(), other.getValue()), builder_};
+  }
+  Bool operator<=(const Float &other) const {
+    return {builder_.CreateFCmpOLE(getValue(), other.getValue()), builder_};
+  }
+  Bool operator>(const Float &other) const {
+    return {builder_.CreateFCmpOGT(getValue(), other.getValue()), builder_};
+  }
+  Bool operator>=(const Float &other) const {
+    return {builder_.CreateFCmpOGE(getValue(), other.getValue()), builder_};
+  }
+
+  Bool operator==(NativeType f) const { return *this == getConst(f); }
+  Bool operator!=(NativeType f) const { return *this != getConst(f); }
+  Bool operator<(NativeType f) const { return *this < getConst(f); }
+  Bool operator<=(NativeType f) const { return *this <= getConst(f); }
+  Bool operator>(NativeType f) const { return *this > getConst(f); }
+  Bool operator>=(NativeType f) const { return *this >= getConst(f); }
+
   /// compound assignment operators
   Float &operator+=(const Float &other) {
     store(builder_.CreateFAdd(getValue(), other.getValue()));
@@ -103,6 +130,17 @@ public:
   Float &operator*=(NativeType f) { return *this *= getConst(f); }
   Float &operator/=(NativeType f) { return *this /= getConst(f); }
 
+  Float operator%(const Float &other) const {
+    return {builder_.CreateFRem(getValue(), other.getValue()), builder_};
+  }
+
+  Float &operator%=(const Float &other) {
+    store(builder_.CreateFRem(getValue(), other.getValue()));
+    return *this;
+  }
+
+  Float &operator%=(NativeType f) { return *this %= getConst(f); }
+
   Float operator^(const Float &other) const {
     return {
         builder_.CreateCall(llvm::Intrinsic::getOrInsertDeclaration(
@@ -113,24 +151,6 @@ public:
   }
 
   Float operator^(NativeType f) const { return *this ^ getConst(f); }
-
-  Float sqrt() const {
-    return {
-        builder_.CreateCall(llvm::Intrinsic::getOrInsertDeclaration(
-                                builder_.GetInsertBlock()->getModule(),
-                                llvm::Intrinsic::sqrt, {getValue()->getType()}),
-                            {getValue()}),
-        builder_};
-  }
-
-  Float abs() const {
-    return {
-        builder_.CreateCall(llvm::Intrinsic::getOrInsertDeclaration(
-                                builder_.GetInsertBlock()->getModule(),
-                                llvm::Intrinsic::fabs, {getValue()->getType()}),
-                            {getValue()}),
-        builder_};
-  }
 
   explicit operator Integer() const;
 };

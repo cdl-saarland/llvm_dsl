@@ -14,10 +14,10 @@
 using namespace MyDSL;
 
 void dumpModule(llvm::Module &M, llvm::StringRef Filename);
-llvm::Function *make_kernel_function(llvm::Module &M, llvm::Type *RetTy,
+llvm::Function *make_kernel(llvm::Module &M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys);
 
-Float build_kernel(llvm::Value *A, llvm::Value *B, llvm::Value *C,
+Float kernel(llvm::Value *A, llvm::Value *B, llvm::Value *C,
              llvm::IRBuilder<> &Builder) {
   Float a(A, Builder);
   Float b(B, Builder);
@@ -27,8 +27,6 @@ Float build_kernel(llvm::Value *A, llvm::Value *B, llvm::Value *C,
   return (s * (s - a) * (s - b) * (s - c)).abs().sqrt();
 }
 
-extern "C" float kernel(float a, float b, float c);
-
 int main(int argc, const char *argv[]) {
   using FloatT = Float::NativeType;
 
@@ -36,7 +34,7 @@ int main(int argc, const char *argv[]) {
   auto &Ctx = *Context;
   auto M = std::make_unique<llvm::Module>("top", Ctx);
 
-  auto Kernel = make_kernel_function(
+  auto Kernel = make_kernel(
       *M.get(), Float::getType(Ctx),
       {Float::getType(Ctx), Float::getType(Ctx), Float::getType(Ctx)});
 
@@ -52,7 +50,7 @@ int main(int argc, const char *argv[]) {
   return 0;
 }
 
-llvm::Function *make_kernel_function(llvm::Module &M, llvm::Type *RetTy,
+llvm::Function *make_kernel(llvm::Module &M, llvm::Type *RetTy,
                             llvm::ArrayRef<llvm::Type *> ArgTys) {
   auto *F = llvm::cast<llvm::Function>(
       M.getOrInsertFunction("kernel", RetTy, ArgTys).getCallee());
@@ -64,21 +62,4 @@ void dumpModule(llvm::Module &M, llvm::StringRef Filename) {
   std::error_code EC;
   llvm::raw_fd_ostream out(Filename, EC);
   out << M;
-}
-
-int main(int argc, const char *argv[]) {
-  if (argc < 4) {
-    std::cerr << "Usage: " << argv[0] << " <a> <b> <c>\n";
-    return 1;
-  }
-
-  float A = std::stof(argv[1]);
-  float B = std::stof(argv[2]);
-  float C = std::stof(argv[3]);
-
-  auto Ret = kernel(A, B, C);
-
-  std::cout << "Evaluated to: " << Ret << "\n";
-
-  return 0;
 }
