@@ -41,11 +41,14 @@ void *getFunctionPtr(void *handle, const std::string &symbol) {
 Handle compile(const std::string &moduleFilename) {
   std::string kernel_so = "/tmp/" + moduleFilename + ".so";
   std::stringstream cmd;
-  cmd << "clang -shared -fPIC -O3 -march=native -o " << kernel_so << " " << moduleFilename;
+  
+  // todo: create cmd to compile moduleFilename to kernel_so
+  
   if (auto error = WEXITSTATUS(std::system(cmd.str().c_str())) != 0) {
     return {nullptr, &detail::close};
   }
 
-  return Handle(detail::open(kernel_so), &detail::close);
+  // todo: return handle to compiled shared library
+  return {nullptr, &detail::close};
 }
 } // namespace MyDSL::jit
