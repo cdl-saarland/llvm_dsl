@@ -3,6 +3,6 @@
 #include <iostream>
 
 int main(int argc, const char *argv[]) {
-  std::cout << "Welcome to the LLVM Demystified Workshop!\nGot " << argc - 1 << " arguments\n";
+  std::cout << "Welcome to the Getting Started with LLVM - Build Your Own Compiler!\nGot " << argc - 1 << " arguments\n";
   return 0;
 }

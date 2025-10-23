@@ -3,7 +3,7 @@
 SCRIPT_PATH=$(dirname $(realpath -s $0))
 
 mkdir -p $SCRIPT_PATH/build && cd $SCRIPT_PATH/build
-cmake .. -G Ninja
+cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ninja
 
 ./YourDSL 15 35 10 > YourDSL.out
