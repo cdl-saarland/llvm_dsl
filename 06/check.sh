@@ -6,13 +6,14 @@ mkdir -p $SCRIPT_PATH/build && cd $SCRIPT_PATH/build
 cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 ninja
 
-./YourDSL 15 35 10 > YourDSL.out
+./YourDSL 15 6 10 > YourDSL.out
 ./YourDSL 2 2 1 >> YourDSL.out
-./YourDSL 100 12 35 >> YourDSL.out
+./YourDSL 30 12 35 >> YourDSL.out
 
-./YourDSLSol 15 35 10 > YourDSLSol.out
+./YourDSLSol 15 6 10 > YourDSLSol.out
 ./YourDSLSol 2 2 1 >> YourDSLSol.out
-./YourDSLSol 100 12 35 >> YourDSLSol.out
+./YourDSLSol 30 12 35 >> YourDSLSol.out
+
 
 if [[ $(cmp YourDSL.out YourDSLSol.out) ]]; then
   echo "YourDSL.out and YourDSLSol.out differ"

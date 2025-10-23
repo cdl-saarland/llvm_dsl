@@ -18,13 +18,13 @@ std::uint64_t inner_product(const std::uint64_t *a, const std::uint64_t *b,
 }
 
 int main(int argc, const char *argv[]) {
-  std::size_t size = 100;
+  std::size_t size = 10;
   if (argc > 1)
     size = std::atoll(argv[1]);
   std::vector<std::uint64_t> a(size);
   std::vector<std::uint64_t> b(size);
 
-  // init a: 1-100, b: 101-200
+  // init a: 1-10, b: 11-20
   std::iota(a.begin(), a.end(), 1);
   std::iota(b.begin(), b.end(), size + 1);
 
